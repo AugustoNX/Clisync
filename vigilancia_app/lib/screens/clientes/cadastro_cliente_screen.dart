@@ -27,8 +27,6 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
     'Residencial',
     'Comercial',
     'Industrial',
-    'Casa',
-    'Apartamento',
   ];
   
   final _databaseService = DatabaseService();
@@ -85,6 +83,8 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
           modalidade: _modalidadeSelecionada,
           valor: double.parse(_valorController.text.replaceAll(',', '.')),
           statusPagamento: widget.cliente?.statusPagamento ?? {},
+          dataCadastro: widget.cliente?.dataCadastro, // Preserva a data de cadastro original
+          status: widget.cliente?.status ?? 'ativo', // Preserva o status do cliente
         );
 
         final user = _authService.currentUser;
