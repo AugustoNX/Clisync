@@ -34,18 +34,9 @@ class _HomeScreenState extends State<HomeScreen> {
           });
         },
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Clientes',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.info),
-            label: 'Relatórios',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Clientes'),
+          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Relatórios'),
         ],
       ),
       floatingActionButton: _currentIndex == 1
@@ -76,24 +67,18 @@ class HomeContent extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              'Bem vindo!',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Atualizações',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.white70,
+            Center(
+              child: const Text(
+                'Bem vindo!',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
             const SizedBox(height: 48),
-            
+
             // Ícone central
             Center(
               child: Container(
@@ -103,15 +88,16 @@ class HomeContent extends StatelessWidget {
                   color: Colors.blue.withOpacity(0.2),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(
-                  Icons.security,
-                  size: 60,
-                  color: Colors.blue,
+                child: ClipOval(
+                  child: Image.asset(
+                    "lib/image/Logo.png",
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 48),
-            
+
             // Card de ações rápidas
             Card(
               child: Padding(
@@ -127,7 +113,7 @@ class HomeContent extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     Row(
                       children: [
                         Expanded(
@@ -136,7 +122,8 @@ class HomeContent extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const CadastroClienteScreen(),
+                                  builder: (context) =>
+                                      const CadastroClienteScreen(),
                                 ),
                               );
                             },
@@ -151,7 +138,8 @@ class HomeContent extends StatelessWidget {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const PendenciasScreen(),
+                                  builder: (context) =>
+                                      const PendenciasScreen(),
                                 ),
                               );
                             },
@@ -165,9 +153,9 @@ class HomeContent extends StatelessWidget {
                 ),
               ),
             ),
-            
+
             const Spacer(),
-            
+
             // Botão de logout
             TextButton.icon(
               onPressed: () async {
@@ -175,9 +163,7 @@ class HomeContent extends StatelessWidget {
               },
               icon: const Icon(Icons.logout),
               label: const Text('Sair'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
             ),
           ],
         ),

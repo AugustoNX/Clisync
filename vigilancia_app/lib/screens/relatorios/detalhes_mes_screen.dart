@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:vigilancia_app/services/auth_service.dart';
 import 'package:vigilancia_app/services/database_service.dart';
+import 'package:vigilancia_app/services/pdf_service.dart';
 import 'package:intl/intl.dart';
 
 class DetalhesMesScreen extends StatefulWidget {
@@ -22,6 +23,7 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
   final _authService = AuthService();
   Map<String, dynamic>? _relatorio;
   bool _isLoading = true;
+  bool _isGeneratingPdf = false;
 
   @override
   void initState() {
@@ -37,6 +39,9 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
     try {
       final user = _authService.currentUser;
       if (user != null) {
+        // Processa virada de mês automaticamente
+        await _databaseService.processarViradaMes(user.uid);
+        
         final relatorio = await _databaseService.getRelatorioMes(user.uid, widget.mesAno);
         setState(() {
           _relatorio = relatorio;
@@ -58,11 +63,69 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
     }
   }
 
+  Future<void> _gerarRelatorioPDF() async {
+    if (_relatorio == null) return;
+
+    setState(() {
+      _isGeneratingPdf = true;
+    });
+
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        final clientes = await _databaseService.getClientes(user.uid);
+        
+        await PdfService.gerarRelatorioMensal(
+          mesAno: widget.mesAno,
+          nomeMes: widget.nomeMes,
+          relatorio: _relatorio!,
+          clientes: clientes,
+          nomeEmpresa: 'Guardium', // TODO: Pode ser configurável
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Relatório PDF gerado com sucesso!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao gerar PDF: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isGeneratingPdf = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.nomeMes),
+        actions: [
+          IconButton(
+            icon: _isGeneratingPdf 
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
+                  )
+                : const Icon(Icons.download),
+            onPressed: _isGeneratingPdf ? null : _gerarRelatorioPDF,
+            tooltip: 'Baixar Relatório PDF',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -73,7 +136,7 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
                     style: TextStyle(fontSize: 18, color: Colors.white70),
                   ),
                 )
-              : Padding(
+              : SingleChildScrollView(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -98,8 +161,8 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
                                 children: [
                                   Expanded(
                                     child: _buildInfoCard(
-                                      'Total de clientes',
-                                      _relatorio!['totalClientes'].toString(),
+                                      'Clientes ativos',
+                                      _relatorio!['totalClientesAtivos'].toString(),
                                       Icons.people,
                                       Colors.blue,
                                     ),
@@ -108,12 +171,20 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
                                   Expanded(
                                     child: _buildInfoCard(
                                       'Novos clientes',
-                                      '0', // TODO: Implementar contagem de novos clientes
+                                      _relatorio!['novosClientes'].toString(),
                                       Icons.person_add,
                                       Colors.green,
                                     ),
                                   ),
                                 ],
+                              ),
+                              const SizedBox(height: 8),
+                              _buildInfoCard(
+                                'Clientes pausados',
+                                _relatorio!['clientesQueSairam'].toString(),
+                                Icons.person_remove,
+                                Colors.orange,
+                                isFullWidth: true,
                               ),
                               const SizedBox(height: 8),
                               
@@ -211,7 +282,7 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
                         ),
                       ),
                       
-                      const Spacer(),
+                      const SizedBox(height: 16),
                       
                       // Botão para ver pendências
                       ElevatedButton.icon(

@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 class Cliente {
   final String id;
   final String nome;
@@ -9,6 +11,8 @@ class Cliente {
   final String modalidade;
   final double valor;
   final Map<String, bool> statusPagamento;
+  final DateTime dataCadastro;
+  final String status; // 'ativo' ou 'desativado'
 
   Cliente({
     required this.id,
@@ -21,7 +25,9 @@ class Cliente {
     required this.modalidade,
     required this.valor,
     this.statusPagamento = const {},
-  });
+    DateTime? dataCadastro,
+    this.status = 'ativo',
+  }) : dataCadastro = dataCadastro ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
     return {
@@ -34,6 +40,8 @@ class Cliente {
       'modalidade': modalidade,
       'valor': valor,
       'statusPagamento': statusPagamento,
+      'dataCadastro': dataCadastro.millisecondsSinceEpoch,
+      'status': status,
     };
   }
 
@@ -49,6 +57,10 @@ class Cliente {
       modalidade: map['modalidade'] ?? '',
       valor: (map['valor'] ?? 0.0).toDouble(),
       statusPagamento: Map<String, bool>.from(map['statusPagamento'] ?? {}),
+      dataCadastro: map['dataCadastro'] != null 
+          ? DateTime.fromMillisecondsSinceEpoch(map['dataCadastro'])
+          : DateTime.now(),
+      status: map['status'] ?? 'ativo',
     );
   }
 
@@ -63,6 +75,8 @@ class Cliente {
     String? modalidade,
     double? valor,
     Map<String, bool>? statusPagamento,
+    DateTime? dataCadastro,
+    String? status,
   }) {
     return Cliente(
       id: id ?? this.id,
@@ -75,6 +89,8 @@ class Cliente {
       modalidade: modalidade ?? this.modalidade,
       valor: valor ?? this.valor,
       statusPagamento: statusPagamento ?? this.statusPagamento,
+      dataCadastro: dataCadastro ?? this.dataCadastro,
+      status: status ?? this.status,
     );
   }
 
@@ -83,4 +99,12 @@ class Cliente {
   bool isAdimplente(String mesAno) {
     return statusPagamento[mesAno] ?? false;
   }
+  
+  bool foiCadastradoNoMes(String mesAno) {
+    final dataFormatada = DateFormat('yyyy-MM').format(dataCadastro);
+    return dataFormatada == mesAno;
+  }
+  
+  bool get isAtivo => status == 'ativo';
+  bool get isDesativado => status == 'desativado';
 }
