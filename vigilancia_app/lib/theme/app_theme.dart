@@ -54,6 +54,12 @@ class AppTheme {
         labelStyle: const TextStyle(color: Colors.white70),
         hintStyle: const TextStyle(color: Colors.white54),
       ),
+      // Configuração do cursor visível
+      textSelectionTheme: const TextSelectionThemeData(
+        cursorColor: accentColor, // Cor do cursor azul brilhante
+        selectionColor: Color(0x553B82F6), // Cor de seleção de texto
+        selectionHandleColor: accentColor, // Cor das alças de seleção
+      ),
       cardTheme: CardThemeData(
         color: surfaceColor,
         shape: RoundedRectangleBorder(

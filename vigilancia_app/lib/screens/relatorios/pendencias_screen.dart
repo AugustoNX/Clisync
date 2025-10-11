@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:vigilancia_app/models/cliente.dart';
 import 'package:vigilancia_app/services/auth_service.dart';
 import 'package:vigilancia_app/services/database_service.dart';
+import 'package:vigilancia_app/utils/string_utils.dart';
 import 'package:intl/intl.dart';
 
 class PendenciasScreen extends StatefulWidget {
@@ -16,16 +17,43 @@ class PendenciasScreen extends StatefulWidget {
 class _PendenciasScreenState extends State<PendenciasScreen> {
   final _databaseService = DatabaseService();
   final _authService = AuthService();
+  final _buscaController = TextEditingController();
   List<Cliente> _clientesInadimplentes = [];
-  double _valorTotalPendencias = 0.0;
+  List<Cliente> _clientesFiltrados = [];
   bool _isLoading = true;
   String _mesAno = '';
+  String _termoBusca = '';
 
   @override
   void initState() {
     super.initState();
     _mesAno = widget.mesAno ?? DateFormat('yyyy-MM').format(DateTime.now());
     _carregarPendencias();
+  }
+
+  @override
+  void dispose() {
+    _buscaController.dispose();
+    super.dispose();
+  }
+
+  void _filtrarClientes(String termo) {
+    setState(() {
+      _termoBusca = termo;
+      if (_termoBusca.isEmpty) {
+        _clientesFiltrados = List.from(_clientesInadimplentes);
+      } else {
+        final termoNormalizado = normalizarParaBusca(termo);
+        _clientesFiltrados = _clientesInadimplentes.where((cliente) {
+          final nomeNormalizado = normalizarParaBusca(cliente.nome);
+          final ruaNormalizada = normalizarParaBusca(cliente.rua);
+          
+          final nomeMatch = nomeNormalizado.contains(termoNormalizado);
+          final ruaMatch = ruaNormalizada.contains(termoNormalizado);
+          return nomeMatch || ruaMatch;
+        }).toList();
+      }
+    });
   }
 
   Future<void> _carregarPendencias() async {
@@ -37,12 +65,13 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
       final user = _authService.currentUser;
       if (user != null) {
         final clientes = await _databaseService.getClientesInadimplentes(user.uid, _mesAno);
-        final valorTotal = clientes.fold(0.0, (sum, cliente) => sum + cliente.valor);
         
         setState(() {
           _clientesInadimplentes = clientes;
-          _valorTotalPendencias = valorTotal;
+          _clientesFiltrados = List.from(clientes);
           _isLoading = false;
+          _buscaController.clear();
+          _termoBusca = '';
         });
       }
     } catch (e) {
@@ -143,7 +172,9 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
                             Column(
                               children: [
                                 Text(
-                                  NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$ ').format(_valorTotalPendencias),
+                                  NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$ ').format(
+                                    _clientesInadimplentes.fold(0.0, (sum, c) => sum + c.valor)
+                                  ),
                                   style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
@@ -163,29 +194,63 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
                   ),
                 ),
                 
+                // Barra de busca
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: TextField(
+                    controller: _buscaController,
+                    decoration: InputDecoration(
+                      hintText: 'Buscar por nome ou rua...',
+                      prefixIcon: const Icon(Icons.search, color: Colors.white70),
+                      suffixIcon: _termoBusca.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.white70),
+                              onPressed: () {
+                                _buscaController.clear();
+                                _filtrarClientes('');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: Colors.white10,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    ),
+                    onChanged: _filtrarClientes,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
                 // Lista de clientes inadimplentes
                 Expanded(
-                  child: _clientesInadimplentes.isEmpty
-                      ? const Center(
+                  child: _clientesFiltrados.isEmpty
+                      ? Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Icon(
-                                Icons.check_circle,
+                                _termoBusca.isEmpty ? Icons.check_circle : Icons.search_off,
                                 size: 64,
-                                color: Colors.green,
+                                color: _termoBusca.isEmpty ? Colors.green : Colors.orange,
                               ),
-                              SizedBox(height: 16),
+                              const SizedBox(height: 16),
                               Text(
-                                'Nenhuma pendência encontrada!',
-                                style: TextStyle(
+                                _termoBusca.isEmpty 
+                                    ? 'Nenhuma pendência encontrada!'
+                                    : 'Nenhum resultado encontrado',
+                                style: const TextStyle(
                                   fontSize: 18,
                                   color: Colors.white70,
                                 ),
                               ),
                               Text(
-                                'Todos os clientes estão em dia.',
-                                style: TextStyle(
+                                _termoBusca.isEmpty
+                                    ? 'Todos os clientes estão em dia.'
+                                    : 'Tente buscar por outro nome ou rua.',
+                                style: const TextStyle(
                                   fontSize: 14,
                                   color: Colors.white54,
                                 ),
@@ -194,9 +259,9 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
                           ),
                         )
                       : ListView.builder(
-                          itemCount: _clientesInadimplentes.length,
+                          itemCount: _clientesFiltrados.length,
                           itemBuilder: (context, index) {
-                            final cliente = _clientesInadimplentes[index];
+                            final cliente = _clientesFiltrados[index];
                             return Card(
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                               child: ListTile(

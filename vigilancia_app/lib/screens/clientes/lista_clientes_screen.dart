@@ -3,6 +3,7 @@ import 'package:vigilancia_app/models/cliente.dart';
 import 'package:vigilancia_app/screens/clientes/cadastro_cliente_screen.dart';
 import 'package:vigilancia_app/services/auth_service.dart';
 import 'package:vigilancia_app/services/database_service.dart';
+import 'package:vigilancia_app/utils/string_utils.dart';
 import 'package:intl/intl.dart';
 
 extension StringExtension on String {
@@ -22,21 +23,70 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
   final _databaseService = DatabaseService();
   final _authService = AuthService();
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
+  
   List<Cliente> _clientes = [];
   List<Cliente> _clientesFiltrados = [];
+  List<Cliente> _clientesExibidos = [];
+  
   bool _isLoading = true;
+  bool _isLoadingMore = false;
   String? _modalidadeFiltro;
+  String _ordenacao = 'a-z'; // a-z, z-a, maior-valor, menor-valor
+  
+  // Controle de paginação
+  static const int _itensPorPagina = 20;
+  int _paginaAtual = 0;
 
   @override
   void initState() {
     super.initState();
     _carregarClientes();
+    _scrollController.addListener(_onScroll);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
+      _carregarMaisItens();
+    }
+  }
+
+  void _carregarMaisItens() {
+    if (_isLoadingMore || _clientesExibidos.length >= _clientesFiltrados.length) {
+      return;
+    }
+
+    setState(() {
+      _isLoadingMore = true;
+    });
+
+    // Simula delay de rede (pode remover se preferir)
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() {
+          _paginaAtual++;
+          final inicio = _paginaAtual * _itensPorPagina;
+          final fim = (inicio + _itensPorPagina).clamp(0, _clientesFiltrados.length);
+          _clientesExibidos.addAll(_clientesFiltrados.sublist(inicio, fim));
+          _isLoadingMore = false;
+        });
+      }
+    });
+  }
+
+  void _resetarPaginacao() {
+    setState(() {
+      _paginaAtual = 0;
+      final fim = _itensPorPagina.clamp(0, _clientesFiltrados.length);
+      _clientesExibidos = _clientesFiltrados.take(fim).toList();
+    });
   }
 
   Future<void> _carregarClientes() async {
@@ -53,8 +103,12 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
         final clientes = await _databaseService.getClientes(user.uid);
         setState(() {
           _clientes = clientes;
-          _clientesFiltrados = clientes;
+          _clientesFiltrados = List.from(clientes);
           _isLoading = false;
+          // Aplica ordenação padrão A-Z
+          _ordenarClientes();
+          // Inicializa paginação
+          _resetarPaginacao();
         });
       }
     } catch (e) {
@@ -73,27 +127,51 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
   }
 
   void _filtrarClientes() {
-    final query = _searchController.text.toLowerCase();
+    final query = _searchController.text;
+    final queryNormalizada = normalizarParaBusca(query);
+    
     setState(() {
       _clientesFiltrados = _clientes.where((cliente) {
-        // Filtro por busca de endereço
-        bool buscaMatch =
-            query.isEmpty ||
-            cliente.nome.toLowerCase().contains(query) ||
-            cliente.enderecoCompleto.toLowerCase().contains(query) ||
-            cliente.rua.toLowerCase().contains(query) ||
-            cliente.bairro.toLowerCase().contains(query) ||
-            cliente.cidade.toLowerCase().contains(query);
+        // Filtro por busca de endereço (ignorando acentos)
+        bool buscaMatch = query.isEmpty ||
+            normalizarParaBusca(cliente.nome).contains(queryNormalizada) ||
+            normalizarParaBusca(cliente.enderecoCompleto).contains(queryNormalizada) ||
+            normalizarParaBusca(cliente.rua).contains(queryNormalizada) ||
+            normalizarParaBusca(cliente.bairro).contains(queryNormalizada) ||
+            normalizarParaBusca(cliente.cidade).contains(queryNormalizada);
 
         // Filtro por modalidade
-        bool modalidadeMatch =
-            _modalidadeFiltro == null ||
-            cliente.modalidade.toLowerCase() ==
-                _modalidadeFiltro!.toLowerCase();
+        bool modalidadeMatch = _modalidadeFiltro == null ||
+            cliente.modalidade.toLowerCase() == _modalidadeFiltro!.toLowerCase();
 
         return buscaMatch && modalidadeMatch;
       }).toList();
+      
+      // Aplicar ordenação
+      _ordenarClientes();
+      
+      // Resetar paginação após filtrar
+      _resetarPaginacao();
     });
+  }
+  
+  void _ordenarClientes() {
+    switch (_ordenacao) {
+      case 'a-z':
+        _clientesFiltrados.sort((a, b) => 
+            normalizarParaBusca(a.nome).compareTo(normalizarParaBusca(b.nome)));
+        break;
+      case 'z-a':
+        _clientesFiltrados.sort((a, b) => 
+            normalizarParaBusca(b.nome).compareTo(normalizarParaBusca(a.nome)));
+        break;
+      case 'maior-valor':
+        _clientesFiltrados.sort((a, b) => b.valor.compareTo(a.valor));
+        break;
+      case 'menor-valor':
+        _clientesFiltrados.sort((a, b) => a.valor.compareTo(b.valor));
+        break;
+    }
   }
 
   Future<void> _alterarStatusCliente(Cliente cliente) async {
@@ -221,37 +299,85 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // Filtro por modalidade
-                DropdownButtonFormField<String>(
-                  value: _modalidadeFiltro,
-                  decoration: const InputDecoration(
-                    labelText: 'Filtrar por Modalidade',
-                    prefixIcon: Icon(Icons.filter_list, color: Colors.white70),
-                  ),
-                  items: [
-                    const DropdownMenuItem<String>(
-                      value: null,
-                      child: Text('Todas as modalidades'),
+                // Filtros lado a lado
+                Row(
+                  children: [
+                    // Filtro por modalidade
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _modalidadeFiltro,
+                        decoration: const InputDecoration(
+                          labelText: 'Modalidade',
+                          prefixIcon: Icon(Icons.filter_list, color: Colors.white70),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: [
+                          const DropdownMenuItem<String>(
+                            value: null,
+                            child: Text('Todas'),
+                          ),
+                          const DropdownMenuItem<String>(
+                            value: 'residencial',
+                            child: Text('Residencial'),
+                          ),
+                          const DropdownMenuItem<String>(
+                            value: 'comercial',
+                            child: Text('Comercial'),
+                          ),
+                          const DropdownMenuItem<String>(
+                            value: 'industrial',
+                            child: Text('Industrial'),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _modalidadeFiltro = newValue;
+                          });
+                          _filtrarClientes();
+                        },
+                      ),
                     ),
-                    const DropdownMenuItem<String>(
-                      value: 'residencial',
-                      child: Text('Residencial'),
-                    ),
-                    const DropdownMenuItem<String>(
-                      value: 'comercial',
-                      child: Text('Comercial'),
-                    ),
-                    const DropdownMenuItem<String>(
-                      value: 'industrial',
-                      child: Text('Industrial'),
+                    const SizedBox(width: 12),
+                    
+                    // Filtro de ordenação
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _ordenacao,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Ordenar',
+                          prefixIcon: Icon(Icons.sort, color: Colors.white70),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: const [
+                          DropdownMenuItem<String>(
+                            value: 'a-z',
+                            child: Text('A-Z', overflow: TextOverflow.ellipsis),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'z-a',
+                            child: Text('Z-A', overflow: TextOverflow.ellipsis),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'maior-valor',
+                            child: Text('Maior Valor', overflow: TextOverflow.ellipsis),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'menor-valor',
+                            child: Text('Menor Valor', overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _ordenacao = newValue;
+                            });
+                            _filtrarClientes();
+                          }
+                        },
+                      ),
                     ),
                   ],
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _modalidadeFiltro = newValue;
-                    });
-                    _filtrarClientes();
-                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -291,9 +417,20 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                     ),
                   )
                 : ListView.builder(
-                    itemCount: _clientesFiltrados.length,
+                    controller: _scrollController,
+                    itemCount: _clientesExibidos.length + (_isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
-                      final cliente = _clientesFiltrados[index];
+                      // Indicador de loading no final
+                      if (index == _clientesExibidos.length) {
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      }
+                      
+                      final cliente = _clientesExibidos[index];
                       final mesAtual = DateFormat(
                         'yyyy-MM',
                       ).format(DateTime.now());
