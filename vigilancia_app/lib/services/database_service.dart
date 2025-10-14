@@ -84,6 +84,27 @@ class DatabaseService {
         .set(pago);
   }
 
+  // Marcar pagamentos futuros (múltiplos meses)
+  Future<void> marcarPagamentosFuturos(String uid, String clienteId, String mesAnoInicial, int quantidadeMeses) async {
+    final updates = <String, bool>{};
+    
+    for (int i = 0; i < quantidadeMeses; i++) {
+      final data = DateTime.parse('$mesAnoInicial-01');
+      final mesFuturo = DateTime(data.year, data.month + i, 1);
+      final mesAnoFuturo = DateFormat('yyyy-MM').format(mesFuturo);
+      updates[mesAnoFuturo] = true;
+    }
+    
+    // Atualiza todos os meses de uma vez
+    await _database
+        .child('usuarios')
+        .child(uid)
+        .child('clientes')
+        .child(clienteId)
+        .child('statusPagamento')
+        .update(updates);
+  }
+
   // Relatórios
   Future<Map<String, dynamic>> getRelatorioMes(String uid, String mesAno) async {
     final clientes = await getClientes(uid);

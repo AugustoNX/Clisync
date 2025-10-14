@@ -186,7 +186,7 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
+            child: const Text('Cancelar', style: TextStyle(color:Colors.white),),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
@@ -306,6 +306,7 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                     Expanded(
                       child: DropdownButtonFormField<String>(
                         value: _modalidadeFiltro,
+                        isExpanded: true,
                         decoration: const InputDecoration(
                           labelText: 'Modalidade',
                           prefixIcon: Icon(Icons.filter_list, color: Colors.white70),
@@ -314,19 +315,19 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                         items: [
                           const DropdownMenuItem<String>(
                             value: null,
-                            child: Text('Todas'),
+                            child: Text('Todas', overflow: TextOverflow.ellipsis),
                           ),
                           const DropdownMenuItem<String>(
                             value: 'residencial',
-                            child: Text('Residencial'),
+                            child: Text('Residencial', overflow: TextOverflow.ellipsis),
                           ),
                           const DropdownMenuItem<String>(
                             value: 'comercial',
-                            child: Text('Comercial'),
+                            child: Text('Comercial', overflow: TextOverflow.ellipsis),
                           ),
                           const DropdownMenuItem<String>(
                             value: 'industrial',
-                            child: Text('Industrial'),
+                            child: Text('Industrial', overflow: TextOverflow.ellipsis),
                           ),
                         ],
                         onChanged: (String? newValue) {
@@ -382,7 +383,7 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                 const SizedBox(height: 16),
 
                 // Campo de busca por endereço
-                TextFormField(
+                TextField(
                   controller: _searchController,
                   decoration: InputDecoration(
                     labelText: 'Buscar por nome ou endereço...',
@@ -455,6 +456,8 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                               Text(
                                 cliente.enderecoCompleto,
                                 style: const TextStyle(color: Colors.white70),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
                               ),
                               const SizedBox(height: 4),
                               Row(
@@ -474,7 +477,9 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                                 style: const TextStyle(color: Colors.white54),
                               ),
                               const SizedBox(height: 8),
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 4,
                                 children: [
                                   Container(
                                     padding: const EdgeInsets.symmetric(
@@ -498,7 +503,6 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 8,

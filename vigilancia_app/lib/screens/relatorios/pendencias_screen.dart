@@ -117,6 +117,120 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
     }
   }
 
+  Future<void> _marcarPagamentosFuturos(Cliente cliente) async {
+    final quantidadeMeses = await _mostrarDialogoMesesFuturos();
+    if (quantidadeMeses != null && quantidadeMeses > 0) {
+      try {
+        final user = _authService.currentUser;
+        if (user != null) {
+          await _databaseService.marcarPagamentosFuturos(user.uid, cliente.id, _mesAno, quantidadeMeses);
+          _carregarPendencias();
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Pagamentos futuros registrados: $quantidadeMeses meses'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao registrar pagamentos futuros: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  Future<int?> _mostrarDialogoMesesFuturos() async {
+    int quantidadeMeses = 1;
+    
+    return showDialog<int>(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Pagamentos Futuros'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Quantos meses à frente o cliente já pagou?'),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        onPressed: quantidadeMeses > 1 ? () => setState(() => quantidadeMeses--) : null,
+                        icon: const Icon(Icons.remove),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.grey[800],
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      Container(
+                        width: 60,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text(
+                          '$quantidadeMeses',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: quantidadeMeses < 12 ? () => setState(() => quantidadeMeses++) : null,
+                        icon: const Icon(Icons.add),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.grey[800],
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Mês${quantidadeMeses > 1 ? 'es' : ''}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text(
+                    'Cancelar',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(quantidadeMeses),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -153,39 +267,44 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                           children: [
-                            Column(
-                              children: [
-                                Text(
-                                  _clientesInadimplentes.length.toString(),
-                                  style: const TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red,
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    _clientesInadimplentes.length.toString(),
+                                    style: const TextStyle(
+                                      fontSize: 24,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
+                                    ),
                                   ),
-                                ),
-                                const Text(
-                                  'Clientes',
-                                  style: TextStyle(color: Colors.white70),
-                                ),
-                              ],
+                                  const Text(
+                                    'Clientes',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                ],
+                              ),
                             ),
-                            Column(
-                              children: [
-                                Text(
-                                  NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$ ').format(
-                                    _clientesInadimplentes.fold(0.0, (sum, c) => sum + c.valor)
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$ ').format(
+                                      _clientesInadimplentes.fold(0.0, (sum, c) => sum + c.valor)
+                                    ),
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.red,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.red,
+                                  const Text(
+                                    'Total',
+                                    style: TextStyle(color: Colors.white70),
                                   ),
-                                ),
-                                const Text(
-                                  'Total',
-                                  style: TextStyle(color: Colors.white70),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),
@@ -271,6 +390,7 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,9 +398,14 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
                                     Text(
                                       cliente.enderecoCompleto,
                                       style: const TextStyle(color: Colors.white70),
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 2,
                                     ),
                                     const SizedBox(height: 4),
-                                    Row(
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 4,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
                                       children: [
                                         Text(
                                           'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(cliente.valor)}',
@@ -289,7 +414,6 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
                                             color: Colors.red,
                                           ),
                                         ),
-                                        const SizedBox(width: 8),
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(
@@ -309,17 +433,35 @@ class _PendenciasScreenState extends State<PendenciasScreen> {
                                     ),
                                   ],
                                 ),
-                                trailing: ElevatedButton(
-                                  onPressed: () => _marcarComoPago(cliente),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    foregroundColor: Colors.white,
-                                    minimumSize: const Size(80, 32),
-                                  ),
-                                  child: const Text(
-                                    'Pago',
-                                    style: TextStyle(fontSize: 12),
-                                  ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ElevatedButton(
+                                      onPressed: () => _marcarPagamentosFuturos(cliente),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blue,
+                                        foregroundColor: Colors.white,
+                                        minimumSize: const Size(70, 32),
+                                      ),
+                                      child: const Text(
+                                        'Futuro',
+                                        style: TextStyle(fontSize: 11),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () => _marcarComoPago(cliente),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                        minimumSize: const Size(70, 32),
+                                      ),
+                                      child: const Text(
+                                        'Pago',
+                                        style: TextStyle(fontSize: 11),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );

@@ -273,6 +273,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(widget.cliente != null 
             ? 'Editar Cliente' 
@@ -284,6 +285,8 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
           child: Form(
             key: _formKey,
             child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

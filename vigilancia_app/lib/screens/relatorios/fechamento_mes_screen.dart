@@ -240,13 +240,16 @@ class _FechamentoMesScreenState extends State<FechamentoMesScreen> {
                                 _anoSelecionado,
                                 style: const TextStyle(fontSize: 16, color: Colors.blue),
                               ),
-                              const Spacer(),
+                              const SizedBox(width: 8),
                               if (_dataPrimeiroCliente != null)
-                                Text(
-                                  'Desde ${DateFormat('MMM/yyyy').format(_dataPrimeiroCliente!)}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.white54,
+                                Flexible(
+                                  child: Text(
+                                    'Desde ${DateFormat('MMM/yyyy').format(_dataPrimeiroCliente!)}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white54,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                             ],

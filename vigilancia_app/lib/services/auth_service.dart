@@ -20,6 +20,19 @@ class AuthService {
         return await _getUserData(result.user!.uid);
       }
       return null;
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'user-not-found':
+        case 'wrong-password':
+        case 'invalid-credential':
+          throw Exception('E-mail ou senha incorretos.');
+        case 'user-disabled':
+          throw Exception('Esta conta foi desabilitada.');
+        case 'too-many-requests':
+          throw Exception('Muitas tentativas. Tente novamente mais tarde.');
+        default:
+          throw Exception('Erro ao fazer login: ${e.message}');
+      }
     } catch (e) {
       throw Exception('Erro ao fazer login: $e');
     }
@@ -47,6 +60,17 @@ class AuthService {
         return usuario;
       }
       return null;
+    } on FirebaseAuthException catch (e) {
+      switch (e.code) {
+        case 'email-already-in-use':
+          throw Exception('Este e-mail já está sendo usado em outra conta.');
+        case 'weak-password':
+          throw Exception('A senha é muito fraca.');
+        case 'invalid-email':
+          throw Exception('E-mail inválido.');
+        default:
+          throw Exception('Erro ao criar conta: ${e.message}');
+      }
     } catch (e) {
       throw Exception('Erro ao criar conta: $e');
     }

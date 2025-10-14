@@ -326,6 +326,8 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
           Text(
             title,
@@ -334,6 +336,8 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
               color: Colors.white70,
             ),
             textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           ),
         ],
       ),
@@ -346,15 +350,23 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70),
+          Flexible(
+            child: Text(
+              label,
+              style: const TextStyle(color: Colors.white70),
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-          Text(
-            NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$ ').format(value),
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: color,
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$ ').format(value),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
             ),
           ),
         ],
@@ -379,6 +391,8 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
               fontWeight: FontWeight.bold,
               color: color,
             ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
           Text(
             title,
@@ -387,6 +401,8 @@ class _DetalhesMesScreenState extends State<DetalhesMesScreen> {
               color: Colors.white70,
             ),
             textAlign: TextAlign.center,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 2,
           ),
         ],
       ),

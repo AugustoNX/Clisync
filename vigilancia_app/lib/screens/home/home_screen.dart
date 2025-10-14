@@ -14,7 +14,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  final _authService = AuthService();
 
   final List<Widget> _screens = [
     const HomeContent(),
@@ -62,11 +61,12 @@ class HomeContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             Center(
               child: const Text(
                 'Bem vindo!',
@@ -154,7 +154,7 @@ class HomeContent extends StatelessWidget {
               ),
             ),
 
-            const Spacer(),
+            SizedBox(height: MediaQuery.of(context).size.height * 0.1),
 
             // Botão de logout
             TextButton.icon(
@@ -166,6 +166,7 @@ class HomeContent extends StatelessWidget {
               style: TextButton.styleFrom(foregroundColor: Colors.red),
             ),
           ],
+          ),
         ),
       ),
     );
