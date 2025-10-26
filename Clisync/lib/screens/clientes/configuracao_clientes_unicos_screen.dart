@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:clisync/services/config_service.dart';
+import 'package:clisync/services/config_unique_service.dart';
 
-class ConfiguracaoCamposScreen extends StatefulWidget {
-  const ConfiguracaoCamposScreen({super.key});
+class ConfiguracaoClientesUnicosScreen extends StatefulWidget {
+  const ConfiguracaoClientesUnicosScreen({super.key});
 
   @override
-  State<ConfiguracaoCamposScreen> createState() => _ConfiguracaoCamposScreenState();
+  State<ConfiguracaoClientesUnicosScreen> createState() => _ConfiguracaoClientesUnicosScreenState();
 }
 
-class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
+class _ConfiguracaoClientesUnicosScreenState extends State<ConfiguracaoClientesUnicosScreen> {
   // Campos disponíveis para configuração
   Map<String, bool> _camposConfiguracao = {};
   
@@ -51,7 +51,7 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
 
   Future<void> _carregarConfiguracao() async {
     try {
-      final config = await ConfigService.carregarConfiguracaoCampos();
+      final config = await ConfigUniqueService.carregarConfiguracaoCampos();
       setState(() {
         _camposConfiguracao = Map<String, bool>.from(config['camposConfiguracao']);
         _camposPersonalizados = Map<String, bool>.from(config['camposPersonalizados']);
@@ -61,9 +61,9 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
     } catch (e) {
       // Em caso de erro, usa configuração padrão
       setState(() {
-        _camposConfiguracao = Map<String, bool>.from(ConfigService.configuracaoPadrao);
+        _camposConfiguracao = Map<String, bool>.from(ConfigUniqueService.configuracaoPadrao);
         _camposPersonalizados = <String, bool>{};
-        _tiposServico = List<String>.from(ConfigService.tiposServicoPadrao);
+        _tiposServico = List<String>.from(ConfigUniqueService.tiposServicoPadrao);
         _isLoading = false;
       });
     }
@@ -81,7 +81,7 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: const Text('Configuração de Campos'),
+          title: const Text('Configuração - Clientes Únicos'),
         ),
         body: const Center(
           child: CircularProgressIndicator(),
@@ -91,7 +91,7 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configuração de Campos'),
+        title: const Text('Configuração - Clientes Únicos'),
       ),
       body: SafeArea(
         child: Padding(
@@ -634,7 +634,7 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
 
   void _salvarConfiguracao() async {
     try {
-      await ConfigService.salvarConfiguracaoCampos(
+      await ConfigUniqueService.salvarConfiguracaoCampos(
         camposConfiguracao: _camposConfiguracao,
         camposPersonalizados: _camposPersonalizados,
         tiposServico: _tiposServico,
@@ -667,7 +667,7 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Campos ativos no cadastro:'),
+                const Text('Campos ativos no cadastro de clientes únicos:'),
                 const SizedBox(height: 8),
                 ...camposAtivos.map((campo) => Padding(
                   padding: const EdgeInsets.symmetric(vertical: 2),
@@ -751,9 +751,9 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
             onPressed: () {
               Navigator.pop(context);
               setState(() {
-                _camposConfiguracao = Map<String, bool>.from(ConfigService.configuracaoPadrao);
+                _camposConfiguracao = Map<String, bool>.from(ConfigUniqueService.configuracaoPadrao);
                 _camposPersonalizados.clear();
-                _tiposServico = List<String>.from(ConfigService.tiposServicoPadrao);
+                _tiposServico = List<String>.from(ConfigUniqueService.tiposServicoPadrao);
               });
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(

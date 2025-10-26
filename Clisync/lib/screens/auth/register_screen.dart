@@ -139,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value == null || value.isEmpty) {
                       return 'Digite seu email';
                     }
-                    if (!value.contains('@')) {
+                    if (!value.contains('@gmail.com') | !value.contains('@outlook.com') | !value.contains('@yahoo.com') | !value.contains('@hotmail.com') | !value.contains('@icloud.com')) {
                       return 'Digite um email válido';
                     }
                     return null;

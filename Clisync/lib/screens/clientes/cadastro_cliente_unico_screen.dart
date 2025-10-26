@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:intl/intl.dart';
-import 'package:clisync/models/cliente.dart';
+import 'package:clisync/models/cliente_unico.dart';
 import 'package:clisync/services/auth_service.dart';
 import 'package:clisync/services/database_service.dart';
-import 'package:clisync/screens/configuracao/configuracao_campos_screen.dart';
-import 'package:clisync/services/config_service.dart';
+import 'package:clisync/screens/clientes/configuracao_clientes_unicos_screen.dart';
+import 'package:clisync/services/config_unique_service.dart';
 
-class CadastroClienteScreen extends StatefulWidget {
-  final Cliente? cliente;
+class CadastroClienteUnicoScreen extends StatefulWidget {
+  final ClienteUnico? clienteUnico;
   
-  const CadastroClienteScreen({super.key, this.cliente});
+  const CadastroClienteUnicoScreen({super.key, this.clienteUnico});
 
   @override
-  State<CadastroClienteScreen> createState() => _CadastroClienteScreenState();
+  State<CadastroClienteUnicoScreen> createState() => _CadastroClienteUnicoScreenState();
 }
 
-class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
+class _CadastroClienteUnicoScreenState extends State<CadastroClienteUnicoScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _telefoneController = TextEditingController();
@@ -70,7 +70,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
       TextPosition(offset: _ruaController.text.length),
     );
     
-    if (widget.cliente != null) {
+    if (widget.clienteUnico != null) {
       _preencherCampos();
     }
     
@@ -93,9 +93,9 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
 
   Future<void> _carregarConfiguracao({bool isReload = false}) async {
     try {
-      final camposAtivos = await ConfigService.obterCamposAtivos();
-      final tiposServico = await ConfigService.obterTiposServico();
-      final config = await ConfigService.carregarConfiguracaoCampos();
+      final camposAtivos = await ConfigUniqueService.obterCamposAtivos();
+      final tiposServico = await ConfigUniqueService.obterTiposServico();
+      final config = await ConfigUniqueService.carregarConfiguracaoCampos();
       
       setState(() {
         _camposAtivos = camposAtivos;
@@ -119,7 +119,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
       // Em caso de erro, usa configuração padrão
       setState(() {
         _camposAtivos = ['Nome', 'Telefone', 'Valor'];
-        _tiposServico = ConfigService.tiposServicoPadrao;
+        _tiposServico = ConfigUniqueService.tiposServicoPadrao;
         if (!isReload) {
           _isLoadingConfig = false;
         }
@@ -324,11 +324,11 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
   }
 
   void _preencherCampos() {
-    final cliente = widget.cliente!;
-    _nomeController.text = cliente.nome;
+    final clienteUnico = widget.clienteUnico!;
+    _nomeController.text = clienteUnico.nome;
     
     // Formata o telefone garantindo o padrão +55
-    String telefoneFormatado = cliente.telefone.replaceAll(RegExp(r'[^0-9]'), '');
+    String telefoneFormatado = clienteUnico.telefone.replaceAll(RegExp(r'[^0-9]'), '');
     if (!telefoneFormatado.startsWith('55')) {
       telefoneFormatado = '55$telefoneFormatado';
     }
@@ -337,31 +337,32 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
       TextEditingValue(text: telefoneFormatado),
     ).text;
     
-    _cidadeController.text = cliente.cidade;
+    _cidadeController.text = clienteUnico.cidade;
     
     // Garante que a rua tenha "Rua " no início
-    String rua = cliente.rua;
+    String rua = clienteUnico.rua;
     if (!rua.startsWith('Rua ')) {
       rua = rua.replaceFirst(RegExp(r'^[Rr]ua\s*'), '');
       rua = 'Rua $rua';
     }
     _ruaController.text = rua;
     
-    _bairroController.text = cliente.bairro;
-    _numeroController.text = cliente.numero;
-    final valorFormatado = _formatarValorBrasileiro(cliente.valor);
+    _bairroController.text = clienteUnico.bairro;
+    _numeroController.text = clienteUnico.numero;
+    final valorFormatado = _formatarValorBrasileiro(clienteUnico.valor);
     _valorController.text = valorFormatado;
     _lastValidValor = valorFormatado; // Salva o valor inicial como válido
+    
     // Preenche os novos campos dinâmicos
-    _tipoServicoSelecionado = cliente.tipoServico;
-    _frequenciaController.text = cliente.frequencia ?? '';
+    _tipoServicoSelecionado = clienteUnico.tipoServico;
+    _frequenciaController.text = clienteUnico.frequencia ?? '';
     
     // Preenche horário do serviço
-    if (cliente.horarioServico != null && cliente.horarioServico!.isNotEmpty) {
-      _horarioServicoController.text = cliente.horarioServico!;
+    if (clienteUnico.horarioServico != null && clienteUnico.horarioServico!.isNotEmpty) {
+      _horarioServicoController.text = clienteUnico.horarioServico!;
       // Tenta converter o horário para TimeOfDay
       try {
-        final partes = cliente.horarioServico!.split(':');
+        final partes = clienteUnico.horarioServico!.split(':');
         if (partes.length == 2) {
           _horarioServicoSelecionado = TimeOfDay(
             hour: int.parse(partes[0]),
@@ -374,31 +375,31 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
     }
     
     // Preenche data do serviço
-    if (cliente.dataServico != null && cliente.dataServico!.isNotEmpty) {
-      _dataServicoController.text = cliente.dataServico!;
+    if (clienteUnico.dataServico != null && clienteUnico.dataServico!.isNotEmpty) {
+      _dataServicoController.text = clienteUnico.dataServico!;
       // Tenta converter a data para DateTime
       try {
-        _dataServicoSelecionada = DateFormat('dd/MM/yyyy').parse(cliente.dataServico!);
+        _dataServicoSelecionada = DateFormat('dd/MM/yyyy').parse(clienteUnico.dataServico!);
       } catch (e) {
         // Se não conseguir converter, mantém como texto
       }
     }
     
-    _prioridadeController.text = cliente.prioridade ?? '';
+    _prioridadeController.text = clienteUnico.prioridade ?? '';
     
     // Preenche data de vencimento
-    if (cliente.dataVencimento != null && cliente.dataVencimento!.isNotEmpty) {
-      _dataVencimentoController.text = cliente.dataVencimento!;
+    if (clienteUnico.dataVencimento != null && clienteUnico.dataVencimento!.isNotEmpty) {
+      _dataVencimentoController.text = clienteUnico.dataVencimento!;
       // Tenta converter a data para DateTime
       try {
-        _dataVencimentoSelecionada = DateFormat('dd/MM/yyyy').parse(cliente.dataVencimento!);
+        _dataVencimentoSelecionada = DateFormat('dd/MM/yyyy').parse(clienteUnico.dataVencimento!);
       } catch (e) {
         // Se não conseguir converter, mantém como texto
       }
     }
     
     // Preenche campos personalizados
-    for (final entry in cliente.camposPersonalizados.entries) {
+    for (final entry in clienteUnico.camposPersonalizados.entries) {
       final campo = entry.key;
       final valor = entry.value;
       if (_camposPersonalizadosControllers.containsKey(campo)) {
@@ -432,7 +433,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
     super.dispose();
   }
 
-  Future<void> _salvarCliente() async {
+  Future<void> _salvarClienteUnico() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -455,8 +456,8 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
           }
         }
         
-        final cliente = Cliente(
-          id: widget.cliente?.id ?? '',
+        final clienteUnico = ClienteUnico(
+          id: widget.clienteUnico?.id ?? '',
           nome: _nomeController.text.trim(),
           telefone: _telefoneController.text.trim(),
           cidade: _cidadeController.text.trim(),
@@ -465,9 +466,8 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
           numero: _numeroController.text.trim(),
           modalidade: 'Residencial', // Valor padrão fixo
           valor: valorDouble,
-          statusPagamento: widget.cliente?.statusPagamento ?? {},
-          dataCadastro: widget.cliente?.dataCadastro, // Preserva a data de cadastro original
-          status: widget.cliente?.status ?? 'ativo', // Preserva o status do cliente
+          dataCadastro: widget.clienteUnico?.dataCadastro, // Preserva a data de cadastro original
+          status: widget.clienteUnico?.status ?? 'ativo', // Preserva o status do cliente
           tipoServico: _tipoServicoSelecionado,
           frequencia: _frequenciaController.text.trim().isNotEmpty ? _frequenciaController.text.trim() : null,
           horarioServico: _horarioServicoController.text.trim().isNotEmpty ? _horarioServicoController.text.trim() : null,
@@ -479,25 +479,25 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
 
         final user = _authService.currentUser;
         if (user != null) {
-          if (widget.cliente != null) {
-            await _databaseService.updateCliente(user.uid, cliente.id, cliente);
+          if (widget.clienteUnico != null) {
+            await _databaseService.updateClienteUnico(user.uid, clienteUnico.id, clienteUnico);
           } else {
-            await _databaseService.createCliente(user.uid, cliente);
+            await _databaseService.createClienteUnico(user.uid, clienteUnico);
           }
           
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(widget.cliente != null 
-                    ? 'Cliente atualizado com sucesso!' 
-                    : 'Cliente cadastrado com sucesso!'),
+                content: Text(widget.clienteUnico != null 
+                    ? 'Cliente único atualizado com sucesso!' 
+                    : 'Cliente único cadastrado com sucesso!'),
                 backgroundColor: Colors.green,
               ),
             );
             
             // Se for edição, retorna o cliente editado
-            if (widget.cliente != null) {
-              Navigator.pop(context, cliente);
+            if (widget.clienteUnico != null) {
+              Navigator.pop(context, clienteUnico);
             } else {
               Navigator.pop(context);
             }
@@ -507,7 +507,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erro ao salvar cliente: $e'),
+              content: Text('Erro ao salvar cliente único: $e'),
               backgroundColor: Colors.red,
             ),
           );
@@ -793,9 +793,9 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
       return Scaffold(
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
-          title: Text(widget.cliente != null 
-              ? 'Editar Cliente' 
-              : 'Cadastre um novo cliente'),
+          title: Text(widget.clienteUnico != null 
+              ? 'Editar Cliente Único' 
+              : 'Cadastre um novo cliente único'),
           actions: [
             IconButton(
               icon: const Icon(Icons.settings),
@@ -803,7 +803,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ConfiguracaoCamposScreen(),
+                    builder: (context) => const ConfiguracaoClientesUnicosScreen(),
                   ),
                 );
               },
@@ -820,9 +820,9 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(widget.cliente != null 
-            ? 'Editar Cliente' 
-            : 'Cadastre um novo cliente'),
+        title: Text(widget.clienteUnico != null 
+            ? 'Editar Cliente Único' 
+            : 'Cadastre um novo cliente único'),
         actions: [
           IconButton(
             icon: const Icon(Icons.settings),
@@ -830,7 +830,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const ConfiguracaoCamposScreen(),
+                  builder: (context) => const ConfiguracaoClientesUnicosScreen(),
                 ),
               );
             },
@@ -853,7 +853,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
                   const SizedBox(height: 32),
                   
                   ElevatedButton(
-                    onPressed: _isLoading ? null : _salvarCliente,
+                    onPressed: _isLoading ? null : _salvarClienteUnico,
                     child: _isLoading
                         ? const SizedBox(
                             height: 20,
@@ -863,7 +863,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
                               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           )
-                        : Text(widget.cliente != null ? 'Atualizar' : 'Cadastrar'),
+                        : Text(widget.clienteUnico != null ? 'Atualizar' : 'Cadastrar'),
                   ),
                 ],
               ),

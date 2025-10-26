@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:clisync/models/cliente.dart';
+import 'package:clisync/models/cliente_unico.dart';
 import 'package:clisync/models/usuario.dart';
 import 'package:intl/intl.dart';
 
@@ -177,5 +178,58 @@ class DatabaseService {
   Future<List<Cliente>> getClientesInadimplentes(String uid, String mesAno) async {
     final clientes = await getClientes(uid);
     return clientes.where((c) => !c.isAdimplente(mesAno)).toList();
+  }
+
+  // Clientes Únicos
+  Future<String> createClienteUnico(String uid, ClienteUnico clienteUnico) async {
+    final clienteRef = _database.child('usuarios').child(uid).child('clientes_unicos').push();
+    await clienteRef.set(clienteUnico.toMap());
+    return clienteRef.key!;
+  }
+
+  Future<void> updateClienteUnico(String uid, String clienteId, ClienteUnico clienteUnico) async {
+    await _database
+        .child('usuarios')
+        .child(uid)
+        .child('clientes_unicos')
+        .child(clienteId)
+        .update(clienteUnico.toMap());
+  }
+
+  Future<void> deleteClienteUnico(String uid, String clienteId) async {
+    await _database
+        .child('usuarios')
+        .child(uid)
+        .child('clientes_unicos')
+        .child(clienteId)
+        .remove();
+  }
+
+  Future<List<ClienteUnico>> getClientesUnicos(String uid) async {
+    final snapshot = await _database.child('usuarios').child(uid).child('clientes_unicos').get();
+    if (snapshot.exists) {
+      final Map<dynamic, dynamic> clientesMap = Map<dynamic, dynamic>.from(snapshot.value as Map);
+      return clientesMap.entries
+          .map((entry) => ClienteUnico.fromMap(entry.key, Map<String, dynamic>.from(entry.value)))
+          .toList();
+    }
+    return [];
+  }
+
+  Stream<List<ClienteUnico>> getClientesUnicosStream(String uid) {
+    return _database
+        .child('usuarios')
+        .child(uid)
+        .child('clientes_unicos')
+        .onValue
+        .map((event) {
+      if (event.snapshot.exists) {
+        final Map<dynamic, dynamic> clientesMap = Map<dynamic, dynamic>.from(event.snapshot.value as Map);
+        return clientesMap.entries
+            .map((entry) => ClienteUnico.fromMap(entry.key, Map<String, dynamic>.from(entry.value)))
+            .toList();
+      }
+      return <ClienteUnico>[];
+    });
   }
 }
