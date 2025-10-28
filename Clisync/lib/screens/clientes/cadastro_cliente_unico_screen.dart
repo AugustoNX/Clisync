@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:intl/intl.dart';
@@ -58,6 +59,10 @@ class _CadastroClienteUnicoScreenState extends State<CadastroClienteUnicoScreen>
   // Configuração de campos ativos
   List<String> _camposAtivos = [];
   Map<String, bool> _camposPersonalizados = {};
+  
+  // Estados para autocomplete
+  List<ClienteUnico> _sugestoesClientes = [];
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -349,41 +354,10 @@ class _CadastroClienteUnicoScreenState extends State<CadastroClienteUnicoScreen>
     
     _bairroController.text = clienteUnico.bairro;
     _numeroController.text = clienteUnico.numero;
-    final valorFormatado = _formatarValorBrasileiro(clienteUnico.valor);
-    _valorController.text = valorFormatado;
-    _lastValidValor = valorFormatado; // Salva o valor inicial como válido
     
     // Preenche os novos campos dinâmicos
     _tipoServicoSelecionado = clienteUnico.tipoServico;
     _frequenciaController.text = clienteUnico.frequencia ?? '';
-    
-    // Preenche horário do serviço
-    if (clienteUnico.horarioServico != null && clienteUnico.horarioServico!.isNotEmpty) {
-      _horarioServicoController.text = clienteUnico.horarioServico!;
-      // Tenta converter o horário para TimeOfDay
-      try {
-        final partes = clienteUnico.horarioServico!.split(':');
-        if (partes.length == 2) {
-          _horarioServicoSelecionado = TimeOfDay(
-            hour: int.parse(partes[0]),
-            minute: int.parse(partes[1]),
-          );
-        }
-      } catch (e) {
-        // Se não conseguir converter, mantém como texto
-      }
-    }
-    
-    // Preenche data do serviço
-    if (clienteUnico.dataServico != null && clienteUnico.dataServico!.isNotEmpty) {
-      _dataServicoController.text = clienteUnico.dataServico!;
-      // Tenta converter a data para DateTime
-      try {
-        _dataServicoSelecionada = DateFormat('dd/MM/yyyy').parse(clienteUnico.dataServico!);
-      } catch (e) {
-        // Se não conseguir converter, mantém como texto
-      }
-    }
     
     _prioridadeController.text = clienteUnico.prioridade ?? '';
     
@@ -410,6 +384,7 @@ class _CadastroClienteUnicoScreenState extends State<CadastroClienteUnicoScreen>
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _ruaController.removeListener(_garantirRuaNoInicio);
     _valorController.removeListener(_formatarValor);
     _nomeController.dispose();
@@ -465,13 +440,12 @@ class _CadastroClienteUnicoScreenState extends State<CadastroClienteUnicoScreen>
           bairro: _bairroController.text.trim(),
           numero: _numeroController.text.trim(),
           modalidade: 'Residencial', // Valor padrão fixo
-          valor: valorDouble,
+          valor: 0.0, // Valor não é salvo separadamente, apenas no historicoServicos
           dataCadastro: widget.clienteUnico?.dataCadastro, // Preserva a data de cadastro original
           status: widget.clienteUnico?.status ?? 'ativo', // Preserva o status do cliente
           tipoServico: _tipoServicoSelecionado,
           frequencia: _frequenciaController.text.trim().isNotEmpty ? _frequenciaController.text.trim() : null,
           horarioServico: _horarioServicoController.text.trim().isNotEmpty ? _horarioServicoController.text.trim() : null,
-          dataServico: _dataServicoController.text.trim().isNotEmpty ? _dataServicoController.text.trim() : null,
           prioridade: _prioridadeController.text.trim().isNotEmpty ? _prioridadeController.text.trim() : null,
           dataVencimento: _dataVencimentoController.text.trim().isNotEmpty ? _dataVencimentoController.text.trim() : null,
           camposPersonalizados: camposPersonalizados,
@@ -479,10 +453,39 @@ class _CadastroClienteUnicoScreenState extends State<CadastroClienteUnicoScreen>
 
         final user = _authService.currentUser;
         if (user != null) {
-          if (widget.clienteUnico != null) {
-            await _databaseService.updateClienteUnico(user.uid, clienteUnico.id, clienteUnico);
+          // Pega a data e horário do serviço do controller
+          final dataServico = _dataServicoController.text.trim();
+          final horarioServico = _horarioServicoController.text.trim();
+          
+          // Pega o histórico existente (se estiver editando)
+          final historicoExistente = Map<String, Map<String, dynamic>>.from(widget.clienteUnico?.historicoServicos ?? {});
+          
+          // Salva apenas no histórico de serviços
+          if (dataServico.isNotEmpty) {
+            final dataServicoFormatada = dataServico.replaceAll('/', '-');
+            
+            // Cria um novo mapa com o histórico existente + o novo serviço
+            final novoHistorico = Map<String, Map<String, dynamic>>.from(historicoExistente);
+            novoHistorico[dataServicoFormatada] = {
+              'valor': valorDouble,
+              'horario': horarioServico,
+            };
+            
+            final clienteComHistorico = clienteUnico.copyWith(
+              historicoServicos: novoHistorico,
+            );
+            
+            if (widget.clienteUnico != null) {
+              await _databaseService.updateClienteUnico(user.uid, clienteUnico.id, clienteComHistorico);
+            } else {
+              await _databaseService.createClienteUnico(user.uid, clienteComHistorico);
+            }
           } else {
-            await _databaseService.createClienteUnico(user.uid, clienteUnico);
+            if (widget.clienteUnico != null) {
+              await _databaseService.updateClienteUnico(user.uid, clienteUnico.id, clienteUnico);
+            } else {
+              await _databaseService.createClienteUnico(user.uid, clienteUnico);
+            }
           }
           
           if (mounted) {
@@ -583,20 +586,134 @@ class _CadastroClienteUnicoScreenState extends State<CadastroClienteUnicoScreen>
     return campos;
   }
 
+  Future<void> _buscarSugestoes(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _sugestoesClientes = [];
+      });
+      return;
+    }
+
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        final sugestoes = await _databaseService.buscarClientesUnicosPorNome(user.uid, query);
+        setState(() {
+          _sugestoesClientes = sugestoes;
+        });
+      }
+    } catch (e) {
+      // Ignora erros de busca
+    }
+  }
+
   Widget _construirCampoNome() {
-    return TextFormField(
-      controller: _nomeController,
-      decoration: const InputDecoration(
-        labelText: 'Nome',
-        prefixIcon: Icon(Icons.person, color: Colors.white70),
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Digite o nome do cliente';
-        }
-        return null;
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _nomeController,
+          decoration: const InputDecoration(
+            labelText: 'Nome Completo',
+            prefixIcon: Icon(Icons.person, color: Colors.white70),
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Nome é obrigatório';
+            }
+            return null;
+          },
+          onChanged: (value) {
+            // Cancela o timer anterior se existir
+            _debounceTimer?.cancel();
+            
+            if (value.isNotEmpty) {
+              // Inicia um novo timer para debounce (aguarda 500ms após parar de digitar)
+              _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+                _buscarSugestoes(value);
+              });
+            } else {
+              setState(() {
+                _sugestoesClientes = [];
+              });
+            }
+          },
+        ),
+        if (_sugestoesClientes.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: Colors.grey[800],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[700]!),
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _sugestoesClientes.length > 5 ? 5 : _sugestoesClientes.length,
+              itemBuilder: (context, index) {
+                final cliente = _sugestoesClientes[index];
+                return InkWell(
+                  onTap: () {
+                    // Preenche o formulário com os dados do cliente existente
+                    setState(() {
+                      _sugestoesClientes = [];
+                    });
+                    _preencherCamposComCliente(cliente);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person_outline, color: Colors.white70, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            cliente.nome,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
     );
+  }
+
+  void _preencherCamposComCliente(ClienteUnico cliente) {
+    _nomeController.text = cliente.nome;
+    _telefoneController.text = cliente.telefone;
+    _cidadeController.text = cliente.cidade;
+    _ruaController.text = cliente.rua;
+    _bairroController.text = cliente.bairro;
+    _numeroController.text = cliente.numero;
+    _valorController.text = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$ ').format(cliente.valor);
+    
+    // Preenche campos opcionais se existirem
+    if (cliente.frequencia != null) _frequenciaController.text = cliente.frequencia!;
+    if (cliente.horarioServico != null) _horarioServicoController.text = cliente.horarioServico!;
+    if (cliente.prioridade != null) _prioridadeController.text = cliente.prioridade!;
+    if (cliente.dataVencimento != null) _dataVencimentoController.text = cliente.dataVencimento!;
+    
+    // Preenche tipo de serviço se existir
+    if (cliente.tipoServico != null) {
+      setState(() {
+        _tipoServicoSelecionado = cliente.tipoServico;
+      });
+    }
+    
+    // Preenche campos personalizados se existirem
+    for (final entry in cliente.camposPersonalizados.entries) {
+      final campo = entry.key;
+      final valor = entry.value;
+      if (_camposPersonalizadosControllers.containsKey(campo)) {
+        _camposPersonalizadosControllers[campo]!.text = valor;
+      }
+    }
   }
 
   Widget _construirCampoTelefone() {
@@ -631,12 +748,12 @@ class _CadastroClienteUnicoScreenState extends State<CadastroClienteUnicoScreen>
       keyboardType: TextInputType.number,
       decoration: const InputDecoration(
         labelText: 'Valor do Serviço',
-        hintText: 'Ex: 100,00',
+        hintText: 'Ex: 100,00 (obrigatório)',
         prefixIcon: Icon(Icons.attach_money, color: Colors.white70),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
-          return 'Digite o valor do serviço';
+          return 'Valor do serviço é obrigatório';
         }
         return null;
       },
@@ -743,8 +860,14 @@ class _CadastroClienteUnicoScreenState extends State<CadastroClienteUnicoScreen>
           icon: const Icon(Icons.calendar_month, color: Colors.white70),
           onPressed: _selecionarDataServico,
         ),
-        hintText: 'Selecione uma data',
+        hintText: 'Selecione uma data (obrigatório)',
       ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Data do serviço é obrigatória';
+        }
+        return null;
+      },
       onTap: _selecionarDataServico,
     );
   }

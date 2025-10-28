@@ -9,14 +9,14 @@ class ConfigUniqueService {
   static const Map<String, bool> _configuracaoPadrao = {
     'Nome': true,           // Sempre obrigatório
     'Valor': true,          // Sempre obrigatório
+    'Data do serviço': true, // Sempre obrigatório
+    'Horário do serviço': true,
     'Telefone': false,      
     'Cidade': false,
     'Bairro': false,
     'Rua': false,
     'Número': false,
     'Tipo do serviço': false,
-    'Data do serviço': false,
-    'Horário do serviço': false,
     'Frequência': false,
     'Data de vencimento do pagamento': false,
     'Prioridade': false,

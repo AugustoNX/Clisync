@@ -1,34 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:clisync/models/cliente.dart';
-import 'package:clisync/screens/clientes/cadastro_cliente_screen.dart';
-import 'package:clisync/screens/clientes/detalhes_cliente_screen.dart';
+import 'package:clisync/models/cliente_unico.dart';
+import 'package:clisync/screens/clientes/cadastro_cliente_unico_screen.dart';
+import 'package:clisync/screens/clientes/detalhes_cliente_unico_screen.dart';
 import 'package:clisync/services/auth_service.dart';
 import 'package:clisync/services/database_service.dart';
 import 'package:clisync/utils/string_utils.dart';
 import 'package:intl/intl.dart';
 
-extension StringExtension on String {
-  String capitalize() {
-    return "${this[0].toUpperCase()}${substring(1)}";
-  }
-}
-
-class ListaClientesScreen extends StatefulWidget {
-  const ListaClientesScreen({super.key});
+class ListaClientesUnicosScreen extends StatefulWidget {
+  const ListaClientesUnicosScreen({super.key});
 
   @override
-  State<ListaClientesScreen> createState() => _ListaClientesScreenState();
+  State<ListaClientesUnicosScreen> createState() => _ListaClientesUnicosScreenState();
 }
 
-class _ListaClientesScreenState extends State<ListaClientesScreen> {
+class _ListaClientesUnicosScreenState extends State<ListaClientesUnicosScreen> {
   final _databaseService = DatabaseService();
   final _authService = AuthService();
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   
-  List<Cliente> _clientes = [];
-  List<Cliente> _clientesFiltrados = [];
-  List<Cliente> _clientesExibidos = [];
+  List<ClienteUnico> _clientes = [];
+  List<ClienteUnico> _clientesFiltrados = [];
+  List<ClienteUnico> _clientesExibidos = [];
   
   bool _isLoading = true;
   bool _isLoadingMore = false;
@@ -52,6 +46,17 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
     super.dispose();
   }
 
+  String _getUltimoValorServico(ClienteUnico cliente) {
+    // Pega o último valor do histórico de serviços
+    if (cliente.historicoServicos.isNotEmpty) {
+      final ultimaInfoServico = cliente.historicoServicos.values.last;
+      final ultimoValor = ultimaInfoServico['valor'] as double? ?? 0.0;
+      return 'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(ultimoValor)}';
+    }
+    // Se não tiver histórico, retorna valor padrão 0
+    return 'R\$ 0,00';
+  }
+
   void _onScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200) {
       _carregarMaisItens();
@@ -67,7 +72,7 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
       _isLoadingMore = true;
     });
 
-    // Simula delay de rede (pode remover se preferir)
+    // Simula delay de rede
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) {
         setState(() {
@@ -97,10 +102,7 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
     try {
       final user = _authService.currentUser;
       if (user != null) {
-        // Processa virada de mês automaticamente
-        await _databaseService.processarViradaMes(user.uid);
-        
-        final clientes = await _databaseService.getClientes(user.uid);
+        final clientes = await _databaseService.getClientesUnicos(user.uid);
         setState(() {
           _clientes = clientes;
           _clientesFiltrados = List.from(clientes);
@@ -170,67 +172,7 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
     }
   }
 
-  Future<void> _alterarStatusCliente(Cliente cliente) async {
-    final novoStatus = cliente.isAtivo ? 'desativado' : 'ativo';
-    final acao = cliente.isAtivo ? 'pausar' : 'reativar';
-
-    final confirmacao = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Confirmar $acao'),
-        content: Text('Deseja realmente $acao o cliente ${cliente.nome}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar', style: TextStyle(color:Colors.white),),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(
-              acao.capitalize(),
-              style: TextStyle(
-                color: cliente.isAtivo ? Colors.orange : Colors.green,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmacao == true) {
-      try {
-        final user = _authService.currentUser;
-        if (user != null) {
-          final clienteAtualizado = cliente.copyWith(status: novoStatus);
-          await _databaseService.updateCliente(
-            user.uid,
-            cliente.id,
-            clienteAtualizado,
-          );
-          _carregarClientes();
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Cliente ${acao}do com sucesso!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Erro ao $acao cliente: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
-
-  Future<void> _deletarCliente(Cliente cliente) async {
+  Future<void> _deletarCliente(ClienteUnico cliente) async {
     final confirmacao = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -253,7 +195,7 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
       try {
         final user = _authService.currentUser;
         if (user != null) {
-          await _databaseService.deleteCliente(user.uid, cliente.id);
+          await _databaseService.deleteClienteUnico(user.uid, cliente.id);
           _carregarClientes();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -281,7 +223,7 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Clientes recorrentes'),
+        title: const Text('Clientes Únicos'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -296,40 +238,46 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
             child: Column(
               children: [
                 // Filtro de ordenação
-                DropdownButtonFormField<String>(
-                  value: _ordenacao,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Ordenar',
-                    prefixIcon: Icon(Icons.sort, color: Colors.white70),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  items: const [
-                    DropdownMenuItem<String>(
-                      value: 'a-z',
-                      child: Text('A-Z', overflow: TextOverflow.ellipsis),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: 'z-a',
-                      child: Text('Z-A', overflow: TextOverflow.ellipsis),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: 'maior-valor',
-                      child: Text('Maior Valor', overflow: TextOverflow.ellipsis),
-                    ),
-                    DropdownMenuItem<String>(
-                      value: 'menor-valor',
-                      child: Text('Menor Valor', overflow: TextOverflow.ellipsis),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String>(
+                        value: _ordenacao,
+                        isExpanded: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Ordenar',
+                          prefixIcon: Icon(Icons.sort, color: Colors.white70),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                        items: const [
+                          DropdownMenuItem<String>(
+                            value: 'a-z',
+                            child: Text('A-Z', overflow: TextOverflow.ellipsis),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'z-a',
+                            child: Text('Z-A', overflow: TextOverflow.ellipsis),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'maior-valor',
+                            child: Text('Maior Valor', overflow: TextOverflow.ellipsis),
+                          ),
+                          DropdownMenuItem<String>(
+                            value: 'menor-valor',
+                            child: Text('Menor Valor', overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              _ordenacao = newValue;
+                            });
+                            _filtrarClientes();
+                          }
+                        },
+                      ),
                     ),
                   ],
-                  onChanged: (String? newValue) {
-                    if (newValue != null) {
-                      setState(() {
-                        _ordenacao = newValue;
-                      });
-                      _filtrarClientes();
-                    }
-                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -364,7 +312,7 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                 : _clientesFiltrados.isEmpty
                 ? const Center(
                     child: Text(
-                      'Nenhum cliente encontrado',
+                      'Nenhum cliente cadastrado, cadastre um cliente para ver a lista',
                       style: TextStyle(fontSize: 18, color: Colors.white70),
                     ),
                   )
@@ -383,10 +331,6 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                       }
                       
                       final cliente = _clientesExibidos[index];
-                      final mesAtual = DateFormat(
-                        'yyyy-MM',
-                      ).format(DateTime.now());
-                      final isAdimplente = cliente.isAdimplente(mesAtual);
 
                       return Card(
                         margin: const EdgeInsets.symmetric(
@@ -398,7 +342,9 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => DetalhesClienteScreen(cliente: cliente),
+                                builder: (context) => DetalhesClienteUnicoScreen(
+                                  clienteUnico: cliente,
+                                ),
                               ),
                             ).then((_) {
                               // Recarrega a lista quando volta dos detalhes
@@ -416,17 +362,11 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                cliente.enderecoCompleto,
-                                style: const TextStyle(color: Colors.white70),
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 2,
-                              ),
-                              const SizedBox(height: 4),
                               Row(
                                 children: [
+                                  const SizedBox(height: 10),
                                   Text(
-                                    'R\$ ${NumberFormat.currency(locale: 'pt_BR', symbol: '').format(cliente.valor)}',
+                                    _getUltimoValorServico(cliente),
                                     style: const TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: Colors.green,
@@ -435,54 +375,31 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                                 ],
                               ),
                               const SizedBox(height: 8),
-                              Wrap(
-                                spacing: 8,
-                                runSpacing: 4,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: isAdimplente
-                                          ? Colors.green
-                                          : Colors.red,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      isAdimplente
-                                          ? 'Adimplente'
-                                          : 'Inadimplente',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
+                              if (cliente.tipoServico != null)
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 4,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.purple,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        cliente.tipoServico!,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: cliente.isAtivo
-                                          ? Colors.blue
-                                          : Colors.orange,
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: Text(
-                                      cliente.isAtivo ? 'Ativo' : 'Pausado',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                  ],
+                                ),
                             ],
                           ),
                           trailing: PopupMenuButton(
@@ -494,25 +411,6 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                                     Icon(Icons.edit, color: Colors.blue),
                                     SizedBox(width: 8),
                                     Text('Editar'),
-                                  ],
-                                ),
-                              ),
-                              PopupMenuItem(
-                                value: cliente.isAtivo ? 'pause' : 'activate',
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      cliente.isAtivo
-                                          ? Icons.pause
-                                          : Icons.play_arrow,
-                                      color: cliente.isAtivo
-                                          ? Colors.orange
-                                          : Colors.green,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      cliente.isAtivo ? 'Pausar' : 'Reativar',
-                                    ),
                                   ],
                                 ),
                               ),
@@ -533,12 +431,12 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) =>
-                                        CadastroClienteScreen(cliente: cliente),
+                                        CadastroClienteUnicoScreen(clienteUnico: cliente),
                                   ),
-                                );
-                              } else if (value == 'pause' ||
-                                  value == 'activate') {
-                                _alterarStatusCliente(cliente);
+                                ).then((_) {
+                                  // Recarrega a lista quando volta da edição
+                                  _carregarClientes();
+                                });
                               } else if (value == 'delete') {
                                 _deletarCliente(cliente);
                               }
@@ -555,3 +453,10 @@ class _ListaClientesScreenState extends State<ListaClientesScreen> {
     );
   }
 }
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
+  }
+}
+

@@ -56,6 +56,34 @@ class DatabaseService {
     return [];
   }
 
+  // Busca clientes recorrentes por nome
+  Future<List<Cliente>> buscarClientesPorNome(String uid, String nome) async {
+    if (nome.isEmpty) return [];
+    
+    final todosClientes = await getClientes(uid);
+    
+    // Normaliza o nome para busca (remove acentos, converte para lowercase)
+    final nomeNormalizado = _normalizarParaBusca(nome);
+    
+    return todosClientes.where((cliente) {
+      final nomeClienteNormalizado = _normalizarParaBusca(cliente.nome);
+      return nomeClienteNormalizado.contains(nomeNormalizado);
+    }).toList();
+  }
+
+  // Verifica se já existe um cliente recorrente com o mesmo nome
+  Future<bool> existeClientePorNome(String uid, String nome, {String? excluirId}) async {
+    final todosClientes = await getClientes(uid);
+    final nomeNormalizado = _normalizarParaBusca(nome);
+    
+    return todosClientes.any((cliente) {
+      final nomeClienteNormalizado = _normalizarParaBusca(cliente.nome);
+      final nomesIguais = nomeClienteNormalizado == nomeNormalizado;
+      final diferenteId = excluirId == null || cliente.id != excluirId;
+      return nomesIguais && diferenteId;
+    });
+  }
+
   Stream<List<Cliente>> getClientesStream(String uid) {
     return _database
         .child('usuarios')
@@ -182,9 +210,44 @@ class DatabaseService {
 
   // Clientes Únicos
   Future<String> createClienteUnico(String uid, ClienteUnico clienteUnico) async {
-    final clienteRef = _database.child('usuarios').child(uid).child('clientes_unicos').push();
-    await clienteRef.set(clienteUnico.toMap());
-    return clienteRef.key!;
+    // Busca cliente existente com o mesmo nome (normalizado)
+    final clientesUnicos = await getClientesUnicos(uid);
+    final nomeNormalizado = _normalizarParaBusca(clienteUnico.nome);
+    
+    // Procura se já existe um cliente com o mesmo nome
+    ClienteUnico? clienteExistente;
+    String? clienteIdExistente;
+    
+    for (final cliente in clientesUnicos) {
+      final nomeClienteNormalizado = _normalizarParaBusca(cliente.nome);
+      if (nomeClienteNormalizado == nomeNormalizado) {
+        clienteExistente = cliente;
+        clienteIdExistente = cliente.id;
+        break;
+      }
+    }
+    
+    if (clienteExistente != null && clienteIdExistente != null) {
+      // Se o cliente já existe, preserva o histórico existente e adiciona o novo serviço
+      final historicoExistente = clienteExistente.historicoServicos;
+      
+      // Combina o histórico existente com o novo histórico
+      final historicoCompleto = Map<String, Map<String, dynamic>>.from(historicoExistente);
+      historicoCompleto.addAll(clienteUnico.historicoServicos);
+      
+      // Cria um novo cliente com o histórico completo
+      final clienteComHistorico = clienteUnico.copyWith(
+        historicoServicos: historicoCompleto,
+      );
+      
+      await updateClienteUnico(uid, clienteIdExistente, clienteComHistorico);
+      return clienteIdExistente;
+    } else {
+      // Cria novo cliente
+      final clienteRef = _database.child('usuarios').child(uid).child('clientes_unicos').push();
+      await clienteRef.set(clienteUnico.toMap());
+      return clienteRef.key!;
+    }
   }
 
   Future<void> updateClienteUnico(String uid, String clienteId, ClienteUnico clienteUnico) async {
@@ -231,5 +294,168 @@ class DatabaseService {
       }
       return <ClienteUnico>[];
     });
+  }
+
+  // Busca clientes únicos por nome
+  Future<List<ClienteUnico>> buscarClientesUnicosPorNome(String uid, String nome) async {
+    if (nome.isEmpty) return [];
+    
+    final todosClientes = await getClientesUnicos(uid);
+    
+    // Normaliza o nome para busca (remove acentos, converte para lowercase)
+    final nomeNormalizado = _normalizarParaBusca(nome);
+    
+    return todosClientes.where((cliente) {
+      final nomeClienteNormalizado = _normalizarParaBusca(cliente.nome);
+      return nomeClienteNormalizado.contains(nomeNormalizado);
+    }).toList();
+  }
+
+  // Verifica se já existe um cliente único com o mesmo nome
+  Future<bool> existeClienteUnicoPorNome(String uid, String nome, {String? excluirId}) async {
+    final todosClientes = await getClientesUnicos(uid);
+    final nomeNormalizado = _normalizarParaBusca(nome);
+    
+    return todosClientes.any((cliente) {
+      final nomeClienteNormalizado = _normalizarParaBusca(cliente.nome);
+      final nomesIguais = nomeClienteNormalizado == nomeNormalizado;
+      final diferenteId = excluirId == null || cliente.id != excluirId;
+      return nomesIguais && diferenteId;
+    });
+  }
+
+  // Método para normalizar strings para busca (remove acentos e converte para lowercase)
+  String _normalizarParaBusca(String texto) {
+    return texto
+        .toLowerCase()
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('ã', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('ä', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('è', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('ë', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ì', 'i')
+        .replaceAll('î', 'i')
+        .replaceAll('ï', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ò', 'o')
+        .replaceAll('õ', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('ö', 'o')
+        .replaceAll('ú', 'u')
+        .replaceAll('ù', 'u')
+        .replaceAll('û', 'u')
+        .replaceAll('ü', 'u')
+        .replaceAll('ç', 'c')
+        .replaceAll('ñ', 'n');
+  }
+
+  /// Busca relatório mensal de clientes únicos
+  /// Retorna: novos clientes, total de serviços prestados, valor total
+  Future<Map<String, dynamic>> getRelatorioMesUnicos(String uid, String mesAno) async {
+    final clientesUnicos = await getClientesUnicos(uid);
+    
+    // Parse do mês/ano (formato: "2025-10")
+    final partes = mesAno.split('-');
+    final ano = int.parse(partes[0]);
+    final mes = int.parse(partes[1]);
+    
+    int novosClientes = 0;
+    int totalServicos = 0;
+    double valorTotal = 0.0;
+    
+    // Percorre todos os clientes
+    for (final cliente in clientesUnicos) {
+      // Verifica se o cliente foi cadastrado neste mês (pela data do primeiro serviço)
+      if (cliente.dataCadastro.year == ano && cliente.dataCadastro.month == mes) {
+        novosClientes++;
+      }
+      
+      // Verifica os serviços prestados no mês (do histórico)
+      if (cliente.historicoServicos.isNotEmpty) {
+        for (final entry in cliente.historicoServicos.entries) {
+          final dataServico = entry.key; // Formato: "29-10-2025"
+          final infoServico = entry.value; // Map com valor e horario
+          final valorServico = infoServico['valor'] as double? ?? 0.0;
+          
+          try {
+            // Tenta parsear a data no formato "dd-MM-yyyy"
+            final partesData = dataServico.split('-');
+            if (partesData.length == 3) {
+              final mesServico = int.parse(partesData[1]);
+              final anoServico = int.parse(partesData[2]);
+              
+              // Verifica se o serviço foi prestado no mês especificado
+              if (anoServico == ano && mesServico == mes) {
+                totalServicos++;
+                valorTotal += valorServico;
+              }
+            }
+          } catch (e) {
+            // Ignora erros de parse
+          }
+        }
+      }
+    }
+    
+    return {
+      'novosClientes': novosClientes,
+      'totalServicos': totalServicos,
+      'valorTotal': valorTotal,
+    };
+  }
+
+  /// Busca os próximos serviços agendados de todos os clientes únicos
+  Future<List<Map<String, dynamic>>> getProximosServicosAgendados(String uid, {int limite = 4}) async {
+    final clientesUnicos = await getClientesUnicos(uid);
+    final agora = DateTime.now();
+    final proximosServicos = <Map<String, dynamic>>[];
+    
+    // Percorre todos os clientes
+    for (final cliente in clientesUnicos) {
+      if (cliente.historicoServicos.isNotEmpty) {
+        for (final entry in cliente.historicoServicos.entries) {
+          final dataServico = entry.key; // Formato: "29-10-2025"
+          final infoServico = entry.value; // Map com valor e horario
+          
+          try {
+            // Tenta parsear a data no formato "dd-MM-yyyy"
+            final partesData = dataServico.split('-');
+            if (partesData.length == 3) {
+              final dia = int.parse(partesData[0]);
+              final mes = int.parse(partesData[1]);
+              final ano = int.parse(partesData[2]);
+              final dataServicoDateTime = DateTime(ano, mes, dia);
+              
+              // Verifica se o serviço é futuro
+              if (dataServicoDateTime.isAfter(agora)) {
+                proximosServicos.add({
+                  'nomeCliente': cliente.nome,
+                  'data': dataServico.replaceAll('-', '/'), // Formato: "29/10/2025"
+                  'horario': infoServico['horario']?.toString() ?? '',
+                  'dataServico': dataServicoDateTime,
+                });
+              }
+            }
+          } catch (e) {
+            // Ignora erros de parse
+          }
+        }
+      }
+    }
+    
+    // Ordena por data (mais próximo primeiro)
+    proximosServicos.sort((a, b) {
+      final dataA = a['dataServico'] as DateTime;
+      final dataB = b['dataServico'] as DateTime;
+      return dataA.compareTo(dataB);
+    });
+    
+    // Retorna apenas os primeiros 4
+    return proximosServicos.take(limite).toList();
   }
 }

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:intl/intl.dart';
@@ -58,6 +59,11 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
   // Configuração de campos ativos
   List<String> _camposAtivos = [];
   Map<String, bool> _camposPersonalizados = {};
+  
+  // Estados para autocomplete
+  List<Cliente> _sugestoesClientes = [];
+  String? _nomeDuplicado;
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -409,6 +415,7 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _ruaController.removeListener(_garantirRuaNoInicio);
     _valorController.removeListener(_formatarValor);
     _nomeController.dispose();
@@ -439,6 +446,32 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
       });
 
       try {
+        // Verifica duplicata antes de salvar
+        final user = _authService.currentUser;
+        if (user != null) {
+          final nome = _nomeController.text.trim();
+          final existe = await _databaseService.existeClientePorNome(
+            user.uid, 
+            nome,
+            excluirId: widget.cliente?.id,
+          );
+          
+          if (existe) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Este cliente já está cadastrado!'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+              setState(() {
+                _isLoading = false;
+              });
+            }
+            return;
+          }
+        }
+        
         // Converte o valor brasileiro (100.000,00) para double
         String valorTexto = _valorController.text;
         valorTexto = valorTexto.replaceAll('.', ''); // Remove pontos dos milhares
@@ -477,7 +510,6 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
           camposPersonalizados: camposPersonalizados,
         );
 
-        final user = _authService.currentUser;
         if (user != null) {
           if (widget.cliente != null) {
             await _databaseService.updateCliente(user.uid, cliente.id, cliente);
@@ -583,19 +615,172 @@ class _CadastroClienteScreenState extends State<CadastroClienteScreen> {
     return campos;
   }
 
-  Widget _construirCampoNome() {
-    return TextFormField(
-      controller: _nomeController,
-      decoration: const InputDecoration(
-        labelText: 'Nome',
-        prefixIcon: Icon(Icons.person, color: Colors.white70),
-      ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Digite o nome do cliente';
+  Future<void> _buscarSugestoes(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _sugestoesClientes = [];
+      });
+      return;
+    }
+
+    try {
+      final user = _authService.currentUser;
+      if (user != null) {
+        final sugestoes = await _databaseService.buscarClientesPorNome(user.uid, query);
+        setState(() {
+          _sugestoesClientes = sugestoes;
+        });
+      }
+    } catch (e) {
+      // Ignora erros de busca
+    }
+  }
+
+  Future<void> _verificarDuplicata(String nome) async {
+    final user = _authService.currentUser;
+    if (user != null && nome.isNotEmpty && nome.length >= 3) {
+      try {
+        final existe = await _databaseService.existeClientePorNome(
+          user.uid, 
+          nome,
+          excluirId: widget.cliente?.id,
+        );
+        
+        setState(() {
+          _nomeDuplicado = existe ? nome : null;
+        });
+        
+        // Mostra aviso imediato para o usuário se existir duplicata
+        if (existe && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('⚠️ Este cliente já está cadastrado! Não é possível cadastrar novamente.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+            ),
+          );
         }
-        return null;
-      },
+      } catch (e) {
+        // Ignora erros
+      }
+    } else if (nome.isEmpty) {
+      setState(() {
+        _nomeDuplicado = null;
+      });
+    }
+  }
+
+  Widget _construirCampoNome() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _nomeController,
+          decoration: InputDecoration(
+            labelText: 'Nome',
+            prefixIcon: const Icon(Icons.person, color: Colors.white70),
+            suffixIcon: _nomeDuplicado != null
+                ? const Icon(Icons.warning, color: Colors.orange)
+                : null,
+          ),
+          validator: (value) {
+            if (value == null || value.isEmpty) {
+              return 'Digite o nome do cliente';
+            }
+            
+            // Verifica duplicata ao validar
+            if (_nomeDuplicado != null && _nomeDuplicado == value) {
+              return 'Este cliente já está cadastrado!';
+            }
+            
+            return null;
+          },
+          onChanged: (value) {
+            // Cancela o timer anterior se existir
+            _debounceTimer?.cancel();
+            
+            if (value.isEmpty) {
+              setState(() {
+                _sugestoesClientes = [];
+                _nomeDuplicado = null;
+              });
+            } else {
+              // Inicia um novo timer para debounce (aguarda 500ms após parar de digitar)
+              _debounceTimer = Timer(const Duration(milliseconds: 500), () {
+                _verificarDuplicata(value);
+                _buscarSugestoes(value);
+              });
+            }
+          },
+        ),
+        if (_sugestoesClientes.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.only(top: 4),
+            constraints: const BoxConstraints(maxHeight: 200),
+            decoration: BoxDecoration(
+              color: Colors.grey[800],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[700]!),
+            ),
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: _sugestoesClientes.length > 5 ? 5 : _sugestoesClientes.length,
+              itemBuilder: (context, index) {
+                final cliente = _sugestoesClientes[index];
+                return InkWell(
+                  onTap: () {
+                    _nomeController.text = cliente.nome;
+                    setState(() {
+                      _sugestoesClientes = [];
+                      _nomeDuplicado = null;
+                    });
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person_outline, color: Colors.white70, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            cliente.nome,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        if (_nomeDuplicado != null && _nomeDuplicado == _nomeController.text.trim())
+          Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.warning, color: Colors.orange, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Este cliente já está cadastrado! Não é possível cadastrar novamente.',
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 

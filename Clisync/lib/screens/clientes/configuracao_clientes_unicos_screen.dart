@@ -28,14 +28,14 @@ class _ConfiguracaoClientesUnicosScreenState extends State<ConfiguracaoClientesU
   final List<String> _ordemCampos = [
     'Nome',
     'Valor',
+    'Data do serviço',
+    'Horário do serviço',
     'Telefone', 
     'Cidade',
     'Bairro',
     'Rua',
     'Número',
     'Tipo do serviço',
-    'Data do serviço',
-    'Horário do serviço',
     'Frequência',
     'Data de vencimento do pagamento',
     'Prioridade',
@@ -54,6 +54,11 @@ class _ConfiguracaoClientesUnicosScreenState extends State<ConfiguracaoClientesU
       final config = await ConfigUniqueService.carregarConfiguracaoCampos();
       setState(() {
         _camposConfiguracao = Map<String, bool>.from(config['camposConfiguracao']);
+        // Garante que campos obrigatórios estão sempre ativos
+        _camposConfiguracao['Nome'] = true;
+        _camposConfiguracao['Valor'] = true;
+        _camposConfiguracao['Data do serviço'] = true;
+        _camposConfiguracao['Horário do serviço'] = true;
         _camposPersonalizados = Map<String, bool>.from(config['camposPersonalizados']);
         _tiposServico = List<String>.from(config['tiposServico']);
         _isLoading = false;
@@ -62,6 +67,11 @@ class _ConfiguracaoClientesUnicosScreenState extends State<ConfiguracaoClientesU
       // Em caso de erro, usa configuração padrão
       setState(() {
         _camposConfiguracao = Map<String, bool>.from(ConfigUniqueService.configuracaoPadrao);
+        // Garante que campos obrigatórios estão sempre ativos
+        _camposConfiguracao['Nome'] = true;
+        _camposConfiguracao['Valor'] = true;
+        _camposConfiguracao['Data do serviço'] = true;
+        _camposConfiguracao['Horário do serviço'] = true;
         _camposPersonalizados = <String, bool>{};
         _tiposServico = List<String>.from(ConfigUniqueService.tiposServicoPadrao);
         _isLoading = false;
@@ -150,7 +160,7 @@ class _ConfiguracaoClientesUnicosScreenState extends State<ConfiguracaoClientesU
                               if (index < _ordemCampos.length) {
                                 final campo = _ordemCampos[index];
                                 final isEnabled = _camposConfiguracao[campo] ?? false;
-                                final isObrigatorio = campo == 'Nome' || campo == 'Valor'; // Nome e Valor são sempre obrigatórios
+                                final isObrigatorio = campo == 'Nome' || campo == 'Valor' || campo == 'Data do serviço' || campo == 'Horário do serviço'; // Nome, Valor, Data do serviço e Horário do serviço são sempre obrigatórios
                               
                                 // Campo especial "Tipo do serviço" com configuração de opções
                                 if (campo == 'Tipo do serviço') {
@@ -634,8 +644,15 @@ class _ConfiguracaoClientesUnicosScreenState extends State<ConfiguracaoClientesU
 
   void _salvarConfiguracao() async {
     try {
+      // Cria uma cópia da configuração e garante que campos obrigatórios estão sempre ativos
+      final configuracaoParaSalvar = Map<String, bool>.from(_camposConfiguracao);
+      configuracaoParaSalvar['Nome'] = true;
+      configuracaoParaSalvar['Valor'] = true;
+      configuracaoParaSalvar['Data do serviço'] = true;
+      configuracaoParaSalvar['Horário do serviço'] = true;
+      
       await ConfigUniqueService.salvarConfiguracaoCampos(
-        camposConfiguracao: _camposConfiguracao,
+        camposConfiguracao: configuracaoParaSalvar,
         camposPersonalizados: _camposPersonalizados,
         tiposServico: _tiposServico,
       );

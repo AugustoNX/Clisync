@@ -15,10 +15,12 @@ class ClienteUnico {
   final String? tipoServico;
   final String? frequencia;
   final String? horarioServico;
-  final String? dataServico;
   final String? prioridade;
   final String? dataVencimento;
   final Map<String, String> camposPersonalizados;
+  
+  // Histórico de serviços com data, valor e horário (formato: {"data": {"valor": 150.0, "horario": "14:30"}})
+  final Map<String, Map<String, dynamic>> historicoServicos;
 
   ClienteUnico({
     required this.id,
@@ -35,10 +37,10 @@ class ClienteUnico {
     this.tipoServico,
     this.frequencia,
     this.horarioServico,
-    this.dataServico,
     this.prioridade,
     this.dataVencimento,
     this.camposPersonalizados = const {},
+    this.historicoServicos = const {},
   }) : dataCadastro = dataCadastro ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
@@ -56,10 +58,10 @@ class ClienteUnico {
       'tipoServico': tipoServico,
       'frequencia': frequencia,
       'horarioServico': horarioServico,
-      'dataServico': dataServico,
       'prioridade': prioridade,
       'dataVencimento': dataVencimento,
       'camposPersonalizados': camposPersonalizados,
+      'historicoServicos': historicoServicos,
     };
   }
 
@@ -81,11 +83,40 @@ class ClienteUnico {
       tipoServico: map['tipoServico'],
       frequencia: map['frequencia'],
       horarioServico: map['horarioServico'],
-      dataServico: map['dataServico'],
       prioridade: map['prioridade'],
       dataVencimento: map['dataVencimento'],
       camposPersonalizados: Map<String, String>.from(map['camposPersonalizados'] ?? {}),
+      historicoServicos: _parseHistoricoServicos(map['historicoServicos']),
     );
+  }
+
+  // Método auxiliar para fazer parse do histórico de serviços
+  static Map<String, Map<String, dynamic>> _parseHistoricoServicos(dynamic data) {
+    if (data == null) return {};
+    
+    final resultado = <String, Map<String, dynamic>>{};
+    final historico = data as Map;
+    
+    for (final entry in historico.entries) {
+      final key = entry.key.toString();
+      final value = entry.value;
+      
+      // Se o valor é um número (formato antigo), converte para o novo formato
+      if (value is num) {
+        resultado[key] = {
+          'valor': value.toDouble(),
+          'horario': '',
+        };
+      } else if (value is Map) {
+        // Formato novo com valor e horario
+        resultado[key] = {
+          'valor': (value['valor'] as num?)?.toDouble() ?? 0.0,
+          'horario': value['horario']?.toString() ?? '',
+        };
+      }
+    }
+    
+    return resultado;
   }
 
   ClienteUnico copyWith({
@@ -103,10 +134,10 @@ class ClienteUnico {
     String? tipoServico,
     String? frequencia,
     String? horarioServico,
-    String? dataServico,
     String? prioridade,
-    String? dataVencimento,
+    String?     dataVencimento,
     Map<String, String>? camposPersonalizados,
+    Map<String, Map<String, dynamic>>? historicoServicos,
   }) {
     return ClienteUnico(
       id: id ?? this.id,
@@ -123,10 +154,10 @@ class ClienteUnico {
       tipoServico: tipoServico ?? this.tipoServico,
       frequencia: frequencia ?? this.frequencia,
       horarioServico: horarioServico ?? this.horarioServico,
-      dataServico: dataServico ?? this.dataServico,
       prioridade: prioridade ?? this.prioridade,
       dataVencimento: dataVencimento ?? this.dataVencimento,
       camposPersonalizados: camposPersonalizados ?? this.camposPersonalizados,
+      historicoServicos: historicoServicos ?? this.historicoServicos,
     );
   }
 
