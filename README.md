@@ -2,6 +2,120 @@
 
 Aplicativo completo de gestão e controle financeiro para prestadores de serviços, desenvolvido em Flutter. O Clisync oferece uma solução integrada para gerenciar clientes, controlar pagamentos, gerar relatórios e agendar serviços de forma eficiente e profissional.
 
+## 🎓 Entendendo o Clisync
+
+### O que é o Clisync?
+
+O **Clisync** é um aplicativo de gestão desenvolvido especialmente para **prestadores de serviços** que precisam organizar seus clientes, controlar pagamentos e acompanhar o crescimento do negócio. Pense nele como um assistente pessoal que ajuda você a:
+
+- **Não perder nenhum cliente**: Mantém todas as informações organizadas em um só lugar
+- **Saber quem pagou e quem não pagou**: Controle financeiro completo e automático
+- **Agendar serviços sem conflitos**: Sistema inteligente que evita sobreposição de horários
+- **Entender seu negócio**: Relatórios e gráficos que mostram como está indo seu trabalho
+- **Crescer de forma organizada**: Acompanhe novos clientes, receitas e tendências
+
+### Como o Clisync Funciona?
+
+O aplicativo foi pensado para atender **dois tipos diferentes de prestadores de serviços**, cada um com suas necessidades específicas:
+
+#### 💼 Modo Planos - Para quem trabalha com planos de serviço
+
+Ideal para profissionais que oferecem **planos de serviço** aos seus clientes. Você cria planos pré-definidos (com nome, valor e frequência) e vincula seus clientes a esses planos. Por exemplo:
+
+- **Salões de beleza** que oferecem planos como "Plano Mensal Completo", "Plano Semanal", "Plano Trimestral"
+- **Empresas de limpeza** com planos de "Limpeza Semanal", "Limpeza Quinzenal", "Limpeza Mensal"
+- **Serviços de manutenção** com planos de "Manutenção Preventiva Mensal", "Suporte Técnico Anual"
+- **Qualquer negócio** que trabalha com pacotes de serviços pré-definidos
+
+**Como funciona:**
+1. Você cria seus planos de serviço (ex: "Plano Premium", "Plano Básico") definindo nome, valor e frequência de pagamento
+2. Ao cadastrar um cliente, você pode vinculá-lo a um dos planos criados ou definir um valor personalizado
+3. O app controla automaticamente os pagamentos de cada cliente conforme a frequência do plano
+4. Você marca os pagamentos conforme recebe
+5. O sistema identifica automaticamente quem está em dia e quem está devendo
+6. Gera relatórios mensais e específicos por plano mostrando desempenho e receitas
+
+**Principais benefícios:**
+- ✅ Criação de planos reutilizáveis que podem ser aplicados a múltiplos clientes
+- ✅ Controle automático de pagamentos por mês/ano baseado na frequência do plano
+- ✅ Relatórios específicos por plano para ver qual plano gera mais receita
+- ✅ Identificação imediata de clientes inadimplentes
+- ✅ Facilita a gestão quando você tem muitos clientes com o mesmo tipo de serviço
+- ✅ Envio de mensagens WhatsApp para cobrança direto do app
+
+#### 🎯 Modo Únicos - Para quem trabalha com agendamentos
+
+Perfeito para profissionais que prestam **serviços pontuais** com **agendamento prévio**. Por exemplo:
+
+- **Cabeleleiros** que fazem cortes e penteados agendados
+- **Manicures** com horários marcados
+- **Pintores** que fazem trabalhos sob demanda
+- **Técnicos** que atendem por chamado
+- **Qualquer profissional** que agenda serviços individuais
+
+**Como funciona:**
+1. Você cadastra os tipos de serviços que oferece (ex: "Corte de Cabelo", "Manicure Completa") e define o valor de cada um
+2. Quando um cliente precisa de serviço, você agenda com data e horário específicos
+3. O sistema verifica automaticamente se o horário está disponível
+4. Cada serviço prestado fica registrado no histórico do cliente
+5. Você controla o pagamento de cada serviço individualmente
+6. O app mostra todos os próximos agendamentos em um só lugar
+
+**Principais benefícios:**
+- ✅ Agendamento inteligente que evita conflitos de horário
+- ✅ Histórico completo de todos os serviços prestados para cada cliente
+- ✅ Controle individual de pagamento por serviço
+- ✅ Visualização de próximos serviços agendados
+- ✅ Geração de link para formulário web onde clientes podem agendar sozinhos
+- ✅ Gráficos mostrando quais tipos de serviço são mais procurados e em quais horários
+
+### Por que usar o Clisync?
+
+#### 📱 Tudo em um só lugar
+Não precisa mais usar planilhas, cadernos ou múltiplos aplicativos. Tudo que você precisa está no Clisync: clientes, pagamentos, agendamentos e relatórios.
+
+#### 🧠 Inteligente e Automático
+O app faz o trabalho pesado por você:
+- Calcula automaticamente quem está em dia e quem está devendo
+- Identifica conflitos de horário antes de você agendar
+- Gera relatórios financeiros completos
+- Organiza tudo de forma lógica e fácil de entender
+
+#### 📊 Entenda seu negócio
+Com gráficos e relatórios detalhados, você descobre:
+- Quais são seus serviços mais procurados
+- Em quais dias da semana você está mais ocupado
+- Quanto você está faturando por mês
+- Quais clientes são mais frequentes
+- Tendências de crescimento do seu negócio
+
+#### 🎨 Personalizável
+Configure o app do seu jeito:
+- Adicione campos personalizados que fazem sentido para seu tipo de negócio
+- Defina os tipos de serviços que você oferece
+- Configure seus horários de atendimento
+- Personalize informações da sua empresa
+
+#### 🔄 Sincronização Automática
+Seus dados ficam seguros na nuvem e sincronizam automaticamente entre todos os seus dispositivos. Acesse de qualquer lugar, a qualquer momento.
+
+#### 💬 Integração com WhatsApp
+Envie mensagens de cobrança diretamente do app, sem precisar copiar e colar informações. O app já prepara a mensagem com todos os dados do cliente.
+
+#### 🌐 Formulário Web
+Gere um link personalizado que seus clientes podem usar para agendar serviços diretamente pela internet, sem precisar te ligar ou mandar mensagem.
+
+### Quem pode usar?
+
+O Clisync é para **qualquer prestador de serviços** que quer:
+- Organizar melhor seus clientes
+- Controlar pagamentos de forma profissional
+- Agendar serviços sem confusão
+- Entender melhor o próprio negócio
+- Crescer de forma organizada
+
+Não importa se você trabalha sozinho ou tem uma equipe, se atende 10 ou 1000 clientes, o Clisync se adapta às suas necessidades.
+
 ## 📋 Sobre o App
 
 O **Clisync** é uma plataforma multiplataforma desenvolvida para **todos os prestadores de serviços** que precisam de um sistema robusto para gerenciar seu negócio. Ideal para:
@@ -19,12 +133,11 @@ O **Clisync** é uma plataforma multiplataforma desenvolvida para **todos os pre
 - **Gerenciar clientes** de forma organizada e eficiente
 - **Controlar pagamentos mensais** e identificar inadimplências
 - **Agendar serviços** e acompanhar próximos atendimentos
-- **Gerar relatórios financeiros** em PDF para análise e documentação
 - **Análises visuais** com gráficos e métricas de desempenho
 - **Personalizar campos** de acordo com as necessidades do seu negócio
 - **Integrar com formulários web** para coleta de dados de clientes
 
-O aplicativo foi projetado para atender dois tipos principais de modelos de negócio: **clientes recorrentes** (mensalidades fixas) e **clientes únicos** (serviços pontuais com agendamento).
+O aplicativo foi projetado para atender dois tipos principais de modelos de negócio: **gestão por planos** (criação de planos de serviço e vinculação de clientes) e **clientes únicos** (serviços pontuais com agendamento).
 
 ## 🚀 Funcionalidades Principais
 
@@ -40,16 +153,19 @@ O aplicativo foi projetado para atender dois tipos principais de modelos de neg�
 
 ### 👥 Gestão de Clientes
 
-#### Modo Recorrentes
+#### Modo Planos
+- **Criação de planos de serviço** com nome, valor e frequência personalizados
+- **Vinculação de clientes a planos** ou valores personalizados
 - **Cadastro completo** de clientes com informações detalhadas
-- **Controle de pagamentos mensais** por período (mês/ano)
+- **Controle de pagamentos** por período (mês/ano) baseado na frequência do plano
 - **Marcação de pagamentos futuros** em lote (múltiplos meses)
 - **Status de adimplência** em tempo real
 - **Busca inteligente** por nome ou endereço (sem acentos)
-- **Ativação/desativação** de clientes
+- **Filtro de clientes por plano** para visualização organizada
+- **Ativação/desativação** de clientes e planos
 - **Validação de duplicatas** por nome
 - **Visualização detalhada** de histórico de pagamentos
-- **Edição completa** de dados do cliente
+- **Edição completa** de dados do cliente e planos
 
 #### Modo Únicos
 - **Cadastro de clientes únicos** para serviços pontuais
@@ -66,12 +182,12 @@ O aplicativo foi projetado para atender dois tipos principais de modelos de neg�
 
 ### 📊 Relatórios e Análises
 
-#### Relatórios Mensais (Recorrentes)
+#### Relatórios Mensais (Planos)
 - **Relatório completo** de fechamento mensal
 - **Estatísticas financeiras**: valor total, recebido e pendente
 - **Métricas de clientes**: ativos, novos, pausados
 - **Análise de adimplência**: adimplentes vs inadimplentes
-- **Geração de PDF** profissional e personalizado
+- **Relatórios específicos por plano** mostrando desempenho de cada plano
 - **Exportação** para impressão ou compartilhamento
 - **Processamento automático** de virada de mês
 
@@ -88,15 +204,15 @@ O aplicativo foi projetado para atender dois tipos principais de modelos de neg�
 - **Filtro inteligente**: apenas serviços pagos ou com pagamento pendente (exclui agendamentos futuros)
 - **Navegação para pendências** do mês específico
 
-#### Relatórios de Pendências
+#### Relatórios de Pendências (Planos)
 - **Lista de clientes inadimplentes** por mês
 - **Agrupamento por mês** para melhor organização
 - **Filtros e busca** avançada por nome ou endereço
+- **Filtro por plano** para ver pendências de planos específicos
 - **Marcação rápida** de pagamentos recebidos com confirmação
 - **Visualização detalhada** de cada pendência
-- **Ordenação cronológica** dos serviços (mais antigo para mais recente)
+- **Ordenação cronológica** (mais antigo para mais recente)
 - **Modo dinâmico**: visualização de todas as pendências ou filtrado por mês específico
-- **Separação individual** de serviços (mesmo cliente com múltiplos serviços aparece separadamente)
 
 #### Relatórios de Pendências (Clientes Únicos)
 - **Lista de serviços pendentes** agrupados por mês
@@ -114,7 +230,7 @@ O aplicativo foi projetado para atender dois tipos principais de modelos de neg�
 - **Campos customizados**: adicione campos específicos do seu negócio
 - **Tipos de serviço**: configure tipos de serviço personalizados com valores
 - **Valores por tipo**: cada tipo de serviço pode ter um valor específico
-- **Modo dual**: alternância entre modo Recorrentes e Únicos
+- **Modo dual**: alternância entre modo Planos e Únicos
 - **Configuração de horários**: defina horário de início e fim de atendimento
 - **Tempo médio de serviço**: configure intervalo entre agendamentos
 - **Tema escuro** moderno e profissional
@@ -156,18 +272,11 @@ O aplicativo foi projetado para atender dois tipos principais de modelos de neg�
 - **Sincronização** entre app e formulário web
 - **Validação de dados** recebidos externamente
 
-### Geração de PDF
-- **Biblioteca de impressão**: Geração profissional de relatórios
-- **Layout personalizado** com logo e informações da empresa
-- **Formatação automática** de valores monetários
-- **Exportação** para impressão ou compartilhamento
-- **Design responsivo** para diferentes tamanhos de papel
-
 ## ✨ Diferenciais
 
 ### 🎯 Dois Modos de Operação
 O Clisync é único por oferecer **dois modos distintos** de gestão, adaptáveis a diferentes tipos de negócios:
-- **Modo Recorrentes**: Ideal para clientes com mensalidades fixas (ex: salões com planos mensais, serviços de limpeza recorrentes, assinaturas)
+- **Modo Planos**: Ideal para profissionais que trabalham com planos de serviço pré-definidos (ex: salões com planos mensais, empresas de limpeza com pacotes, serviços de manutenção com assinaturas)
 - **Modo Únicos**: Perfeito para serviços pontuais com agendamento (ex: cortes de cabelo, manicures, pinturas, reparos)
 
 ### 🔄 Alternância Dinâmica
@@ -209,7 +318,6 @@ O Clisync é único por oferecer **dois modos distintos** de gestão, adaptávei
 - **Análise financeira detalhada** por mês
 - **Métricas de crescimento** (novos clientes, saídas)
 - **Identificação de inadimplência** automática
-- **PDFs profissionais** prontos para apresentação
 - **Gráficos e visualizações** para análise de tendências
 - **Filtros inteligentes** para relatórios precisos
 
@@ -235,8 +343,6 @@ O Clisync é único por oferecer **dois modos distintos** de gestão, adaptávei
 - **Firebase Auth**: Autenticação de usuários
 - **Firebase Realtime Database**: Banco de dados em tempo real
 - **Google Fonts**: Tipografia personalizada
-- **PDF**: Geração de documentos PDF
-- **Printing**: Impressão e visualização de PDFs
 - **Intl**: Internacionalização e formatação
 - **Shared Preferences**: Armazenamento local de preferências
 - **URL Launcher**: Abertura de links externos
