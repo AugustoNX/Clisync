@@ -27,7 +27,6 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
   // Ordem definida dos campos
   final List<String> _ordemCampos = [
     'Nome',
-    'Valor',
     'Telefone', 
     'Cidade',
     'Bairro',
@@ -52,8 +51,12 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
   Future<void> _carregarConfiguracao() async {
     try {
       final config = await ConfigService.carregarConfiguracaoCampos();
+      final camposCarregados = Map<String, bool>.from(config['camposConfiguracao']);
+      
+      // Inicializa com a configuração padrão e mescla com os valores carregados
       setState(() {
-        _camposConfiguracao = Map<String, bool>.from(config['camposConfiguracao']);
+        _camposConfiguracao = Map<String, bool>.from(ConfigService.configuracaoPadrao);
+        _camposConfiguracao.addAll(camposCarregados);
         _camposPersonalizados = Map<String, bool>.from(config['camposPersonalizados']);
         _tiposServico = List<String>.from(config['tiposServico']);
         _isLoading = false;
@@ -150,7 +153,7 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
                               if (index < _ordemCampos.length) {
                                 final campo = _ordemCampos[index];
                                 final isEnabled = _camposConfiguracao[campo] ?? false;
-                                final isObrigatorio = campo == 'Nome' || campo == 'Valor'; // Nome e Valor são sempre obrigatórios
+                                final isObrigatorio = campo == 'Nome'; // Nome é sempre obrigatório
                               
                                 // Campo especial "Tipo do serviço" com configuração de opções
                                 if (campo == 'Tipo do serviço') {
@@ -389,8 +392,6 @@ class _ConfiguracaoCamposScreenState extends State<ConfiguracaoCamposScreen> {
         return Icons.location_on;
       case 'Número':
         return Icons.numbers;
-      case 'Valor':
-        return Icons.attach_money;
       case 'Frequência':
         return Icons.schedule;
       case 'Horário do serviço':

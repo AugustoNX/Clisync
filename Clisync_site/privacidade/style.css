@@ -1,0 +1,430 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+    --bg-color: #1F2937;
+    --bg-secondary: #111827;
+    --primary: #1E3A8A;
+    --primary-light: #3B82F6;
+    --text: #FFFFFF;
+    --text-muted: rgba(255, 255, 255, 0.7);
+    --text-light: rgba(255, 255, 255, 0.5);
+    --card-bg: rgba(31, 41, 55, 0.8);
+    --card-bg-solid: #374151;
+    --border: rgba(255, 255, 255, 0.15);
+    --shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 30px 60px rgba(0, 0, 0, 0.5);
+    --gradient: linear-gradient(135deg, #1E3A8A 0%, #3B82F6 100%);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text);
+    line-height: 1.8;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+/* Navigation */
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(31, 41, 55, 0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    z-index: 1000;
+    padding: 1rem 0;
+}
+
+.nav-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar .logo {
+    height: 40px;
+    width: auto;
+    display: block;
+}
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.nav-links a {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+    font-size: 0.95rem;
+}
+
+.nav-links a:hover {
+    color: var(--primary-light);
+}
+
+.btn-nav {
+    background: var(--primary);
+    padding: 0.6rem 1.5rem;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.btn-nav:hover {
+    background: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(30, 58, 138, 0.4);
+}
+
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.menu-toggle span {
+    width: 24px;
+    height: 2px;
+    background: var(--text);
+    transition: all 0.3s ease;
+}
+
+/* Main Content */
+.privacy-content {
+    margin-top: 80px;
+    padding: 4rem 0;
+    background: var(--bg-color);
+    min-height: calc(100vh - 80px);
+}
+
+.privacy-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.privacy-title {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.update-date {
+    color: var(--text-muted);
+    font-size: 1rem;
+}
+
+/* Intro Box */
+.intro-box {
+    background: var(--card-bg);
+    padding: 2.5rem;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(14px);
+    margin-bottom: 3rem;
+}
+
+.intro-box h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--primary-light);
+}
+
+.intro-box p {
+    color: var(--text-muted);
+    line-height: 1.8;
+}
+
+/* Privacy Sections */
+.privacy-section {
+    background: var(--card-bg);
+    padding: 2.5rem;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(14px);
+    margin-bottom: 2rem;
+    transition: all 0.3s ease;
+}
+
+.privacy-section:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow);
+}
+
+.privacy-section h2 {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+    border-left: 4px solid var(--primary);
+    padding-left: 1rem;
+}
+
+.privacy-section h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    color: var(--primary-light);
+}
+
+.privacy-section p {
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.8;
+    text-align: justify;
+}
+
+.privacy-section ul,
+.privacy-section ol {
+    margin-left: 2rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-muted);
+}
+
+.privacy-section li {
+    margin-bottom: 0.75rem;
+    line-height: 1.8;
+}
+
+.privacy-section strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+.privacy-section a {
+    color: var(--primary-light);
+    text-decoration: none;
+    transition: color 0.3s ease;
+    border-bottom: 1px solid transparent;
+}
+
+.privacy-section a:hover {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* Info Box */
+.info-box {
+    background: rgba(30, 58, 138, 0.2);
+    border-left: 4px solid var(--primary);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin: 1.5rem 0;
+}
+
+.info-box p {
+    margin-bottom: 0;
+    color: var(--text);
+}
+
+.info-box strong {
+    color: var(--primary-light);
+}
+
+/* Contact Box */
+.contact-box {
+    background: var(--card-bg-solid);
+    padding: 2.5rem;
+    border-radius: 24px;
+    border: 1px solid var(--primary);
+    margin-top: 2rem;
+}
+
+.contact-box h2 {
+    color: var(--primary-light);
+    margin-bottom: 1.5rem;
+    border: none;
+    padding: 0;
+}
+
+.contact-box h3 {
+    color: var(--text);
+    font-size: 1.2rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.contact-box p {
+    color: var(--text-muted);
+}
+
+/* Footer */
+.footer {
+    background: var(--bg-secondary);
+    padding: 4rem 0 2rem;
+    border-top: 1px solid var(--border);
+}
+
+.footer-content {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 4rem;
+    margin-bottom: 3rem;
+}
+
+.footer-logo {
+    height: 50px;
+    width: auto;
+    margin-bottom: 1rem;
+}
+
+.footer-brand p {
+    color: var(--text-muted);
+}
+
+.footer-links {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.footer-column h4 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+
+.footer-column a {
+    display: block;
+    color: var(--text-muted);
+    text-decoration: none;
+    margin-bottom: 0.75rem;
+    transition: color 0.3s ease;
+}
+
+.footer-column a:hover {
+    color: var(--primary-light);
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+    color: var(--text-light);
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    .footer-content {
+        grid-template-columns: 1fr;
+    }
+
+    .footer-links {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .nav-links {
+        position: fixed;
+        top: 70px;
+        left: 0;
+        right: 0;
+        background: rgba(31, 41, 55, 0.98);
+        backdrop-filter: blur(20px);
+        flex-direction: column;
+        padding: 2rem;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .nav-links.active {
+        transform: translateX(0);
+    }
+
+    .nav-links a {
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .nav-links a:last-child {
+        border-bottom: none;
+    }
+
+    .menu-toggle {
+        display: flex;
+    }
+
+    .menu-toggle.active span:nth-child(1) {
+        transform: rotate(45deg) translate(5px, 5px);
+    }
+
+    .menu-toggle.active span:nth-child(2) {
+        opacity: 0;
+    }
+
+    .menu-toggle.active span:nth-child(3) {
+        transform: rotate(-45deg) translate(7px, -6px);
+    }
+
+    .privacy-content {
+        padding: 2rem 0;
+    }
+
+    .privacy-section {
+        padding: 1.5rem;
+    }
+
+    .intro-box {
+        padding: 1.5rem;
+    }
+
+    .contact-box {
+        padding: 1.5rem;
+    }
+
+    .container {
+        padding: 0 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .privacy-title {
+        font-size: 2rem;
+    }
+
+    .privacy-section h2 {
+        font-size: 1.5rem;
+    }
+
+    .privacy-section h3 {
+        font-size: 1.2rem;
+    }
+
+    .privacy-section ul,
+    .privacy-section ol {
+        margin-left: 1.5rem;
+    }
+}

@@ -112,9 +112,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 
                 TextFormField(
                   controller: _nameController,
+                  maxLength: 30,
                   decoration: const InputDecoration(
                     labelText: 'Nome',
                     prefixIcon: Icon(Icons.person, color: Colors.white70),
+                    counterText: '',
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -131,15 +133,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  maxLength: 40,
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email, color: Colors.white70),
+                    counterText: '',
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Digite seu email';
                     }
-                    if (!value.contains('@gmail.com') | !value.contains('@outlook.com') | !value.contains('@yahoo.com') | !value.contains('@hotmail.com') | !value.contains('@icloud.com')) {
+                    if (!value.contains('@gmail.com') && !value.contains('@outlook.com') && !value.contains('@yahoo.com') && !value.contains('@hotmail.com') && !value.contains('@icloud.com')) {
                       return 'Digite um email válido';
                     }
                     return null;
@@ -150,6 +154,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  maxLength: 20,
                   decoration: InputDecoration(
                     labelText: 'Senha',
                     prefixIcon: const Icon(Icons.lock, color: Colors.white70),
@@ -164,6 +169,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                     ),
+                    counterText: '',
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -172,14 +178,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     if (value.length < 6) {
                       return 'A senha deve ter pelo menos 6 caracteres';
                     }
+                    
+                    // Verifica se tem pelo menos uma letra maiúscula
+                    if (!value.contains(RegExp(r'[A-Z]'))) {
+                      return 'A senha deve conter pelo menos uma letra maiúscula';
+                    }
+                    
+                    // Verifica se tem pelo menos uma letra minúscula
+                    if (!value.contains(RegExp(r'[a-z]'))) {
+                      return 'A senha deve conter pelo menos uma letra minúscula';
+                    }
+                    
+                    // Verifica se tem pelo menos um número
+                    if (!value.contains(RegExp(r'[0-9]'))) {
+                      return 'A senha deve conter pelo menos um número';
+                    }
+                    
+                    // Verifica se tem pelo menos um caractere especial
+                    if (!value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'))) {
+                      return 'A senha deve conter pelo menos um caractere especial (!@#\$%^&*(),.?":{}|<>)';
+                    }
+                    
                     return null;
                   },
                 ),
                 const SizedBox(height: 16),
-                
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: _obscureConfirmPassword,
+                  maxLength: 20,
                   decoration: InputDecoration(
                     labelText: 'Confirmar Senha',
                     prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
@@ -194,6 +221,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         });
                       },
                     ),
+                    counterText: '',
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -205,7 +233,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
-                const SizedBox(height: 32),
+                Padding(
+                  padding: const EdgeInsets.only(left: 16.0, top: 16.0, bottom: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'A senha deve conter:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '• No mínimo 6 caracteres\n• Pelo menos uma letra maiúscula\n• Pelo menos uma letra minúscula\n• Pelo menos um número\n• Pelo menos um caractere especial (!@#\$%^&*(),.?":{}|<>)',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white60,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
                 
                 ElevatedButton(
                   onPressed: _isLoading ? null : _register,

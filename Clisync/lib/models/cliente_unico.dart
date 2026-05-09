@@ -1,4 +1,9 @@
 class ClienteUnico {
+  static const String statusAgendado = 'agendado';
+  static const String statusAguardandoPagamento = 'aguardando_pagamento';
+  static const String statusPago = 'pago';
+  static const String statusCancelado = 'cancelado';
+
   final String id;
   final String nome;
   final String telefone;
@@ -6,13 +11,7 @@ class ClienteUnico {
   final String rua;
   final String bairro;
   final String numero;
-  final String modalidade;
-  final double valor;
-  final DateTime dataCadastro;
   final String status; // 'ativo' ou 'desativado'
-  
-  // Campos dinâmicos
-  final String? tipoServico;
   final String? frequencia;
   final String? horarioServico;
   final String? prioridade;
@@ -30,32 +29,24 @@ class ClienteUnico {
     required this.rua,
     required this.bairro,
     required this.numero,
-    required this.modalidade,
-    required this.valor,
-    DateTime? dataCadastro,
     this.status = 'ativo',
-    this.tipoServico,
     this.frequencia,
     this.horarioServico,
     this.prioridade,
     this.dataVencimento,
     this.camposPersonalizados = const {},
     this.historicoServicos = const {},
-  }) : dataCadastro = dataCadastro ?? DateTime.now();
+  });
 
   Map<String, dynamic> toMap() {
     return {
       'nome': nome,
-      'valor': valor,
       'telefone': telefone,
       'cidade': cidade,
       'rua': rua,
       'bairro': bairro,
       'numero': numero,
-      'modalidade': modalidade,
-      'dataCadastro': dataCadastro.millisecondsSinceEpoch,
       'status': status,
-      'tipoServico': tipoServico,
       'frequencia': frequencia,
       'horarioServico': horarioServico,
       'prioridade': prioridade,
@@ -74,13 +65,7 @@ class ClienteUnico {
       rua: map['rua'] ?? '',
       bairro: map['bairro'] ?? '',
       numero: map['numero'] ?? '',
-      modalidade: map['modalidade'] ?? '',
-      valor: (map['valor'] ?? 0.0).toDouble(),
-      dataCadastro: map['dataCadastro'] != null 
-          ? DateTime.fromMillisecondsSinceEpoch(map['dataCadastro'])
-          : DateTime.now(),
       status: map['status'] ?? 'ativo',
-      tipoServico: map['tipoServico'],
       frequencia: map['frequencia'],
       horarioServico: map['horarioServico'],
       prioridade: map['prioridade'],
@@ -106,17 +91,111 @@ class ClienteUnico {
         resultado[key] = {
           'valor': value.toDouble(),
           'horario': '',
+          'statusPagamento': statusPago,
         };
       } else if (value is Map) {
-        // Formato novo com valor e horario
-        resultado[key] = {
+        // Formato novo com valor, horario, statusPagamento e tipoServico
+        final servicoMap = <String, dynamic>{
           'valor': (value['valor'] as num?)?.toDouble() ?? 0.0,
           'horario': value['horario']?.toString() ?? '',
+          'statusPagamento': value['statusPagamento']?.toString() ?? statusPago,
         };
+        
+        // Inclui tipoServico se existir
+        if (value['tipoServico'] != null) {
+          servicoMap['tipoServico'] = value['tipoServico']?.toString();
+        }
+        
+        resultado[key] = servicoMap;
       }
     }
     
     return resultado;
+  }
+
+  String obterStatusPagamento(String dataKey, {DateTime? referencia}) {
+    final info = historicoServicos[dataKey];
+    if (info == null) return statusPago;
+    return _statusEfetivo(dataKey, info, referencia ?? DateTime.now());
+  }
+
+  String get statusAtual {
+    final agora = DateTime.now();
+    var temAgendado = false;
+    var temAguardando = false;
+
+    for (final entry in historicoServicos.entries) {
+      final status = _statusEfetivo(entry.key, entry.value, agora);
+      // Ignora serviços cancelados no cálculo do status atual
+      if (status == statusCancelado) {
+        continue;
+      }
+      if (status == statusAgendado) {
+        temAgendado = true;
+        break;
+      }
+      if (status == statusAguardandoPagamento) {
+        temAguardando = true;
+      }
+    }
+
+    if (temAgendado) return statusAgendado;
+    if (temAguardando) return statusAguardandoPagamento;
+    return statusPago;
+  }
+
+  static String _statusEfetivo(
+    String dataKey,
+    Map<String, dynamic> info,
+    DateTime referencia,
+  ) {
+    final statusArmazenado = info['statusPagamento']?.toString() ?? statusPago;
+    
+    // Se o status armazenado é cancelado, retorna cancelado independente da data
+    if (statusArmazenado == statusCancelado) {
+      return statusCancelado;
+    }
+    
+    if (statusArmazenado == statusPago) {
+      return statusPago;
+    }
+
+    final dataServico = _parseDataHora(dataKey, info['horario']?.toString());
+    if (dataServico == null) {
+      return statusArmazenado == statusPago ? statusPago : statusAguardandoPagamento;
+    }
+
+    if (dataServico.isAfter(referencia)) {
+      return statusAgendado;
+    }
+
+    return statusAguardandoPagamento;
+  }
+
+  static DateTime? _parseDataHora(String dataKey, String? horario) {
+    try {
+      final partesData = dataKey.split('-');
+      if (partesData.length != 3) return null;
+
+      final dia = int.parse(partesData[0]);
+      final mes = int.parse(partesData[1]);
+      final ano = int.parse(partesData[2]);
+
+      int hora = 0;
+      int minuto = 0;
+
+      if (horario != null && horario.isNotEmpty) {
+        final partesHorario = horario.split(':');
+        if (partesHorario.length == 2) {
+          hora = int.tryParse(partesHorario[0]) ?? 0;
+          minuto = int.tryParse(partesHorario[1]) ?? 0;
+        }
+      }
+
+      return DateTime(ano, mes, dia, hora, minuto);
+    } catch (_) {
+      return null;
+    }
   }
 
   ClienteUnico copyWith({
@@ -127,11 +206,7 @@ class ClienteUnico {
     String? rua,
     String? bairro,
     String? numero,
-    String? modalidade,
-    double? valor,
-    DateTime? dataCadastro,
     String? status,
-    String? tipoServico,
     String? frequencia,
     String? horarioServico,
     String? prioridade,
@@ -147,11 +222,7 @@ class ClienteUnico {
       rua: rua ?? this.rua,
       bairro: bairro ?? this.bairro,
       numero: numero ?? this.numero,
-      modalidade: modalidade ?? this.modalidade,
-      valor: valor ?? this.valor,
-      dataCadastro: dataCadastro ?? this.dataCadastro,
       status: status ?? this.status,
-      tipoServico: tipoServico ?? this.tipoServico,
       frequencia: frequencia ?? this.frequencia,
       horarioServico: horarioServico ?? this.horarioServico,
       prioridade: prioridade ?? this.prioridade,

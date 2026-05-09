@@ -4,15 +4,27 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:clisync/firebase_options.dart';
 import 'package:clisync/screens/auth/login_screen.dart';
 import 'package:clisync/screens/home/home_screen.dart';
-import 'package:clisync/screens/relatorios/pendencias_screen.dart';
+import 'package:clisync/screens/relatorios/pendencias/pendencias_screen.dart';
 import 'package:clisync/services/auth_service.dart';
 import 'package:clisync/theme/app_theme.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Configura tratamento de erro global para evitar telas em branco
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    // Em produção, você pode querer enviar isso para um serviço de crash reporting
+  };
+  
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Inicializa o Google Mobile Ads
+  await MobileAds.instance.initialize();
+  
   runApp(const ClisyncApp());
 }
 
@@ -26,6 +38,13 @@ class ClisyncApp extends StatelessWidget {
       theme: AppTheme.darkTheme,
       home: const AuthWrapper(),
       debugShowCheckedModeBanner: false,
+      // Configura ErrorWidget customizado para evitar telas em branco
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+          child: child ?? const SizedBox(),
+        );
+      },
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
@@ -60,7 +79,7 @@ class AuthWrapper extends StatelessWidget {
         }
         
         if (snapshot.hasData) {
-          return const HomeScreen();
+          return const HomeScreen(key: ValueKey('home_screen'));
         } else {
           return const LoginScreen();
         }
@@ -68,3 +87,5 @@ class AuthWrapper extends StatelessWidget {
     );
   }
 }
+
+

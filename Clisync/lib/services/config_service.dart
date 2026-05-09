@@ -17,7 +17,6 @@ class ConfigService {
     'Data do serviço': false,
     'Horário do serviço': false,
     'Frequência': false,
-    'Valor': true,          // Sempre obrigatório
     'Data de vencimento do pagamento': false,
     'Prioridade': false,
   };
@@ -34,14 +33,16 @@ class ConfigService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Usuário não autenticado');
 
-    final configRef = _database.ref('usuarios/${user.uid}/configuracao');
+    final configRef = _database.ref('usuarios/${user.uid}/configuracao_recorrentes');
     
-    await configRef.set({
-      'camposConfiguracao': camposConfiguracao,
+    // Salva os campos diretamente no nível raiz, junto com camposPersonalizados e tiposServico
+    final dadosParaSalvar = <String, dynamic>{
+      ...camposConfiguracao,
       'camposPersonalizados': camposPersonalizados,
       'tiposServico': tiposServico,
-      'ultimaAtualizacao': ServerValue.timestamp,
-    });
+    };
+    
+    await configRef.set(dadosParaSalvar);
   }
 
   /// Carrega a configuração de campos do usuário do Firebase
@@ -49,15 +50,36 @@ class ConfigService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Usuário não autenticado');
 
-    final configRef = _database.ref('usuarios/${user.uid}/configuracao');
+    final configRef = _database.ref('usuarios/${user.uid}/configuracao_recorrentes');
     final snapshot = await configRef.get();
 
     if (snapshot.exists) {
-      final data = snapshot.value as Map<dynamic, dynamic>;
+      final data = Map<String, dynamic>.from(snapshot.value as Map<dynamic, dynamic>);
+      
+      // Formato novo: campos diretamente no raiz
+      final camposConfiguracao = <String, bool>{};
+      final camposPersonalizados = <String, bool>{};
+      final tiposServico = <String>[];
+      
+      for (final entry in data.entries) {
+        if (entry.key == 'camposPersonalizados') {
+          if (entry.value is Map) {
+            camposPersonalizados.addAll(Map<String, bool>.from(entry.value));
+          }
+        } else if (entry.key == 'tiposServico') {
+          if (entry.value is List) {
+            tiposServico.addAll(List<String>.from(entry.value));
+          }
+        } else if (entry.value is bool) {
+          // Campos de configuração (valores booleanos)
+          camposConfiguracao[entry.key] = entry.value as bool;
+        }
+      }
+      
       return {
-        'camposConfiguracao': Map<String, bool>.from(data['camposConfiguracao'] ?? {}),
-        'camposPersonalizados': Map<String, bool>.from(data['camposPersonalizados'] ?? {}),
-        'tiposServico': List<String>.from(data['tiposServico'] ?? []),
+        'camposConfiguracao': camposConfiguracao,
+        'camposPersonalizados': camposPersonalizados,
+        'tiposServico': tiposServico,
       };
     } else {
       // Retorna configuração padrão se não existir
@@ -87,7 +109,6 @@ class ConfigService {
       'Data do serviço',
       'Horário do serviço',
       'Frequência',
-      'Valor',
       'Data de vencimento do pagamento',
       'Prioridade',
     ];

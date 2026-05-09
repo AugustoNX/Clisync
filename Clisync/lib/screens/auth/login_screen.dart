@@ -118,9 +118,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
+                  maxLength: 40,
                   decoration: const InputDecoration(
                     labelText: 'Email',
                     prefixIcon: Icon(Icons.email, color: Colors.white70),
+                    counterText: '',
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -137,6 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
+                  maxLength: 20,
                   decoration: InputDecoration(
                     labelText: 'Senha',
                     prefixIcon: const Icon(Icons.lock, color: Colors.white70),
@@ -151,6 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         });
                       },
                     ),
+                    counterText: '',
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {

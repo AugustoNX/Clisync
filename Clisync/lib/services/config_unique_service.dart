@@ -5,43 +5,37 @@ class ConfigUniqueService {
   static final FirebaseDatabase _database = FirebaseDatabase.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Configuração padrão dos campos para clientes únicos
   static const Map<String, bool> _configuracaoPadrao = {
-    'Nome': true,           // Sempre obrigatório
-    'Valor': true,          // Sempre obrigatório
-    'Data do serviço': true, // Sempre obrigatório
+    'Nome': true,
+    'Data do serviço': true,
     'Horário do serviço': true,
-    'Telefone': false,      
+    'Telefone': true, 
     'Cidade': false,
     'Bairro': false,
     'Rua': false,
     'Número': false,
-    'Tipo do serviço': false,
     'Frequência': false,
     'Data de vencimento do pagamento': false,
     'Prioridade': false,
   };
 
-  // Tipos de serviço padrão para clientes únicos
-  static const List<String> _tiposServicoPadrao = [];
-
   /// Salva a configuração de campos do usuário no Firebase para clientes únicos
   static Future<void> salvarConfiguracaoCampos({
     required Map<String, bool> camposConfiguracao,
     required Map<String, bool> camposPersonalizados,
-    required List<String> tiposServico,
   }) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Usuário não autenticado');
 
-    final configRef = _database.ref('usuarios/${user.uid}/configuracao_clientes_unicos');
+    final configRef = _database.ref('usuarios/${user.uid}/configuracao_unicos');
     
-    await configRef.set({
-      'camposConfiguracao': camposConfiguracao,
+    // Salva os campos diretamente no nível raiz, junto com camposPersonalizados
+    final dadosParaSalvar = <String, dynamic>{
+      ...camposConfiguracao,
       'camposPersonalizados': camposPersonalizados,
-      'tiposServico': tiposServico,
-      'ultimaAtualizacao': ServerValue.timestamp,
-    });
+    };
+    
+    await configRef.set(dadosParaSalvar);
   }
 
   /// Carrega a configuração de campos do usuário do Firebase para clientes únicos
@@ -49,22 +43,36 @@ class ConfigUniqueService {
     final user = _auth.currentUser;
     if (user == null) throw Exception('Usuário não autenticado');
 
-    final configRef = _database.ref('usuarios/${user.uid}/configuracao_clientes_unicos');
+    final configRef = _database.ref('usuarios/${user.uid}/configuracao_unicos');
     final snapshot = await configRef.get();
 
     if (snapshot.exists) {
-      final data = snapshot.value as Map<dynamic, dynamic>;
+      final data = Map<String, dynamic>.from(snapshot.value as Map<dynamic, dynamic>);
+      
+      // Formato novo: campos diretamente no raiz
+      final camposConfiguracao = <String, bool>{};
+      final camposPersonalizados = <String, bool>{};
+      
+      for (final entry in data.entries) {
+        if (entry.key == 'camposPersonalizados') {
+          if (entry.value is Map) {
+            camposPersonalizados.addAll(Map<String, bool>.from(entry.value));
+          }
+        } else if (entry.value is bool) {
+          // Campos de configuração (valores booleanos)
+          camposConfiguracao[entry.key] = entry.value as bool;
+        }
+      }
+      
       return {
-        'camposConfiguracao': Map<String, bool>.from(data['camposConfiguracao'] ?? {}),
-        'camposPersonalizados': Map<String, bool>.from(data['camposPersonalizados'] ?? {}),
-        'tiposServico': List<String>.from(data['tiposServico'] ?? []),
+        'camposConfiguracao': camposConfiguracao,
+        'camposPersonalizados': camposPersonalizados,
       };
     } else {
       // Retorna configuração padrão se não existir
       return {
         'camposConfiguracao': Map<String, bool>.from(_configuracaoPadrao),
         'camposPersonalizados': <String, bool>{},
-        'tiposServico': List<String>.from(_tiposServicoPadrao),
       };
     }
   }
@@ -78,13 +86,11 @@ class ConfigUniqueService {
     // Ordem definida dos campos
     final ordemCampos = [
       'Nome',
-      'Valor',
       'Telefone', 
       'Cidade',
       'Bairro',
       'Rua',
       'Número',
-      'Tipo do serviço',
       'Data do serviço',
       'Horário do serviço',
       'Frequência',
@@ -113,12 +119,6 @@ class ConfigUniqueService {
     return camposAtivos;
   }
 
-  /// Obtém os tipos de serviço configurados para clientes únicos
-  static Future<List<String>> obterTiposServico() async {
-    final config = await carregarConfiguracaoCampos();
-    return List<String>.from(config['tiposServico'] ?? _tiposServicoPadrao);
-  }
-
   /// Verifica se um campo específico está ativo para clientes únicos
   static Future<bool> isCampoAtivo(String nomeCampo) async {
     final camposAtivos = await obterCamposAtivos();
@@ -127,5 +127,4 @@ class ConfigUniqueService {
 
   /// Obtém a configuração padrão para clientes únicos
   static Map<String, bool> get configuracaoPadrao => Map<String, bool>.from(_configuracaoPadrao);
-  static List<String> get tiposServicoPadrao => List<String>.from(_tiposServicoPadrao);
 }

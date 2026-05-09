@@ -8,11 +8,12 @@ class Cliente {
   final String rua;
   final String bairro;
   final String numero;
-  final String modalidade;
   final double valor;
   final Map<String, bool> statusPagamento;
   final DateTime dataCadastro;
   final String status; // 'ativo' ou 'desativado'
+  final String? planoId; // ID do plano vinculado ao cliente
+  final String? planoNome; // Nome do plano (para facilitar exibição)
   
   // Novos campos dinâmicos
   final String? tipoServico;
@@ -31,7 +32,6 @@ class Cliente {
     required this.rua,
     required this.bairro,
     required this.numero,
-    required this.modalidade,
     required this.valor,
     this.statusPagamento = const {},
     DateTime? dataCadastro,
@@ -43,6 +43,8 @@ class Cliente {
     this.prioridade,
     this.dataVencimento,
     this.camposPersonalizados = const {},
+    this.planoId,
+    this.planoNome,
   }) : dataCadastro = dataCadastro ?? DateTime.now();
 
   Map<String, dynamic> toMap() {
@@ -53,7 +55,6 @@ class Cliente {
       'rua': rua,
       'bairro': bairro,
       'numero': numero,
-      'modalidade': modalidade,
       'valor': valor,
       'statusPagamento': statusPagamento,
       'dataCadastro': dataCadastro.millisecondsSinceEpoch,
@@ -65,6 +66,8 @@ class Cliente {
       'prioridade': prioridade,
       'dataVencimento': dataVencimento,
       'camposPersonalizados': camposPersonalizados,
+      'planoId': planoId,
+      'planoNome': planoNome,
     };
   }
 
@@ -77,7 +80,6 @@ class Cliente {
       rua: map['rua'] ?? '',
       bairro: map['bairro'] ?? '',
       numero: map['numero'] ?? '',
-      modalidade: map['modalidade'] ?? '',
       valor: (map['valor'] ?? 0.0).toDouble(),
       statusPagamento: Map<String, bool>.from(map['statusPagamento'] ?? {}),
       dataCadastro: map['dataCadastro'] != null 
@@ -91,6 +93,8 @@ class Cliente {
       prioridade: map['prioridade'],
       dataVencimento: map['dataVencimento'],
       camposPersonalizados: Map<String, String>.from(map['camposPersonalizados'] ?? {}),
+      planoId: map['planoId'],
+      planoNome: map['planoNome'],
     );
   }
 
@@ -102,7 +106,6 @@ class Cliente {
     String? rua,
     String? bairro,
     String? numero,
-    String? modalidade,
     double? valor,
     Map<String, bool>? statusPagamento,
     DateTime? dataCadastro,
@@ -114,6 +117,8 @@ class Cliente {
     String? prioridade,
     String? dataVencimento,
     Map<String, String>? camposPersonalizados,
+    String? planoId,
+    String? planoNome,
   }) {
     return Cliente(
       id: id ?? this.id,
@@ -123,7 +128,6 @@ class Cliente {
       rua: rua ?? this.rua,
       bairro: bairro ?? this.bairro,
       numero: numero ?? this.numero,
-      modalidade: modalidade ?? this.modalidade,
       valor: valor ?? this.valor,
       statusPagamento: statusPagamento ?? this.statusPagamento,
       dataCadastro: dataCadastro ?? this.dataCadastro,
@@ -135,10 +139,37 @@ class Cliente {
       prioridade: prioridade ?? this.prioridade,
       dataVencimento: dataVencimento ?? this.dataVencimento,
       camposPersonalizados: camposPersonalizados ?? this.camposPersonalizados,
+      planoId: planoId ?? this.planoId,
+      planoNome: planoNome ?? this.planoNome,
     );
   }
 
-  String get enderecoCompleto => '$rua, n°$numero - $bairro, $cidade';
+  String get enderecoCompleto {
+    final ruaTrim = rua.trim();
+    final numeroTrim = numero.trim();
+    final bairroTrim = bairro.trim();
+    final cidadeTrim = cidade.trim();
+
+    final partes = <String>[];
+
+    if (ruaTrim.isNotEmpty && numeroTrim.isNotEmpty) {
+      partes.add('$ruaTrim, n°$numeroTrim');
+    } else if (ruaTrim.isNotEmpty) {
+      partes.add(ruaTrim);
+    } else if (numeroTrim.isNotEmpty) {
+      partes.add('n°$numeroTrim');
+    }
+
+    if (bairroTrim.isNotEmpty) {
+      partes.add(bairroTrim);
+    }
+
+    if (cidadeTrim.isNotEmpty) {
+      partes.add(cidadeTrim);
+    }
+
+    return partes.join(' - ');
+  }
   
   bool isAdimplente(String mesAno) {
     return statusPagamento[mesAno] ?? false;

@@ -25,7 +25,7 @@ class AppTheme {
         onSurface: textColor,
         onBackground: textColor,
       ),
-      textTheme: GoogleFonts.interTextTheme(base.textTheme),
+      textTheme: _getTextTheme(base.textTheme),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
@@ -78,5 +78,15 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
       ),
     );
+  }
+
+  // Método auxiliar para carregar fontes com fallback
+  static TextTheme _getTextTheme(TextTheme base) {
+    try {
+      return GoogleFonts.interTextTheme(base);
+    } catch (e) {
+      // Se houver erro ao carregar a fonte, usa o tema base
+      return base;
+    }
   }
 }
